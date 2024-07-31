@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "lib": ["es2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "es2022",
+    "sourceMap": true,
+    "baseUrl": "./",
+    "outDir": "dist",
+    "esModuleInterop": true,
+
+    "paths": {
+      "@root/*": ["src/*"],
+      "@test/*": ["test/*"],
+      "@test-helper/*": ["test-helper/*"]
+    },
+
+    "strict": true,
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "strictFunctionTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}
