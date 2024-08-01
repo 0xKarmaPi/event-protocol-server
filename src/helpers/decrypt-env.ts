@@ -4,7 +4,7 @@ import * as fs from "node:fs"
 export const decryptEnv = (secret: string) => {
   const ivLength = 16
 
-  const fileBuffer = fs.readFileSync(".env.enc")
+  const fileBuffer = fs.readFileSync(".env.local")
 
   const iv = fileBuffer.subarray(0, ivLength)
 

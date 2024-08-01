@@ -7,8 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  address String @id @db.VarChar
+model PredictionEvent {
+  id        Int      @id @default(autoincrement())
+  title     String
+  endTime   DateTime
+  balance   String
+  createdAt DateTime @default(now())
+  answers PredictionAnswer[]
+}
 
-  @@map("user")
+model PredictionAnswer{
+  id Int @id @default(autoincrement())
+  value String
+  isCorrect Boolean @default(false)
+  acceptableVoteTick String
+  predictionEventId Int
+  predictionEvent PredictionEvent @relation(fields: [predictionEventId], references: [id], onDelete: Cascade)
+  predictionVotes PredictionVote[]
+}
+
+model PredictionVote {
+  id Int @id @default(autoincrement())
+  predictionAnswerId Int
+  userId Int 
+  predictionAnswer PredictionAnswer @relation(fields: [predictionAnswerId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  username String
+  predictionVotes PredictionVote[]
 }
