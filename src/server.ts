@@ -17,7 +17,11 @@ import { prisma } from "./infrastrutures/database.js"
 
 declare module "fastify" {
   //   interface FastifyInstance {}
-  //   interface FastifyRequest {}
+  interface FastifyRequest {
+    user: {
+      something: number
+    }
+  }
 }
 
 function main() {
