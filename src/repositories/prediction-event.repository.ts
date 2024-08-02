@@ -13,6 +13,11 @@ export abstract class PredictionEventRepository {
             acceptableVoteTick: true,
             value: true
           }
+        },
+        author: {
+          select: {
+            hashedCode: true
+          }
         }
       }
     })
@@ -33,18 +38,25 @@ export abstract class PredictionEventRepository {
             acceptableVoteTick: true,
             value: true
           }
+        },
+        author: {
+          select: {
+            hashedCode: true
+          }
         }
       }
     })
   }
 
-  static async create(data: Prisma.PredictionEventCreateInput) {
-    return prisma.predictionEvent.create({ data })
-  }
-
-  static async deleteById(id: number) {
-    return prisma.predictionEvent.delete({
-      where: { id }
+  static async create(
+    userId: number,
+    data: Prisma.PredictionEventCreateWithoutAuthorInput
+  ) {
+    return prisma.predictionEvent.create({
+      data: {
+        ...data,
+        userId
+      }
     })
   }
 }

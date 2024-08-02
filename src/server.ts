@@ -1,5 +1,6 @@
 import autoLoad from "@fastify/autoload"
 import cors from "@fastify/cors"
+import jwt from "@fastify/jwt"
 import fastifySensible from "@fastify/sensible"
 import type { SwaggerOptions } from "@fastify/swagger"
 import fastifySwagger from "@fastify/swagger"
@@ -14,12 +15,17 @@ import { dirname, join } from "path"
 import { fileURLToPath } from "url"
 
 import { prisma } from "./infrastrutures/database.js"
+import { JWT_SECRET_KEY } from "./shared/env.js"
 
 declare module "fastify" {
   //   interface FastifyInstance {}
-  interface FastifyRequest {
+  // interface FastifyRequest {}
+}
+
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
     user: {
-      something: number
+      id: number
     }
   }
 }
@@ -63,6 +69,12 @@ function main() {
     )
     .register(cors)
     .register(fastifySensible)
+    .register(jwt, {
+      secret: JWT_SECRET_KEY,
+      sign: {
+        expiresIn: "3h"
+      }
+    })
     .register(autoLoad, {
       dir: join(__dirname, "plugins"),
       matchFilter: path => path.startsWith("/_"),

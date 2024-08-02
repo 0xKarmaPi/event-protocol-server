@@ -9,11 +9,13 @@ datasource db {
 
 model PredictionEvent {
   id        Int      @id @default(autoincrement())
+  userId Int 
   title     String
   endTime   DateTime
   balance   String
   createdAt DateTime @default(now())
   answers PredictionAnswer[]
+  author User @relation(fields: [userId], references: [id])
 }
 
 model PredictionAnswer{
@@ -30,6 +32,7 @@ model PredictionVote {
   id Int @id @default(autoincrement())
   predictionAnswerId Int
   userId Int 
+  amountBalance String
   predictionAnswer PredictionAnswer @relation(fields: [predictionAnswerId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -37,5 +40,19 @@ model PredictionVote {
 model User {
   id Int @id @default(autoincrement())
   username String
+  email String @unique()
+  hashedCode String @unique()
   predictionVotes PredictionVote[]
+  PredictionEvent PredictionEvent[]
+}
+
+model Otp {
+  id Int @id @default(autoincrement())
+   email String 
+   type OTP 
+   expirerIn DateTime
+}
+
+enum OTP {
+  PAYLOAD 
 }

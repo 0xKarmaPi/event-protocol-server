@@ -5,7 +5,6 @@ import { PredictionAnswerRepository } from "@root/repositories/prediction-event-
 import { PredictionEventRepository } from "@root/repositories/prediction-event.repository.js"
 
 const predictionEventHandler: FastifyPluginAsyncZod = async self => {
-  // Create new by prediction_event_id
   self.post(
     "/",
     {

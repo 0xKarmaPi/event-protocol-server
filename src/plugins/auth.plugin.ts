@@ -1,10 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { FastifyPluginAsync } from "fastify"
 import fastifyPlugin from "fastify-plugin"
 
 const authPlugin: FastifyPluginAsync = async self => {
-  self.addHook("onRequest", ({ headers }, reply) => {
-    throw reply.unauthorized()
+  self.addHook("onRequest", async (request, reply) => {
+    try {
+      await request.jwtVerify()
+    } catch (err) {
+      throw reply.unauthorized()
+    }
   })
 }
 
