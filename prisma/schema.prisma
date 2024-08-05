@@ -40,17 +40,17 @@ model PredictionVote {
 model User {
   id Int @id @default(autoincrement())
   username String
-  email String @unique()
-  hashedCode String @unique()
+  address String @unique()
   predictionVotes PredictionVote[]
   PredictionEvent PredictionEvent[]
 }
 
 model Otp {
   id Int @id @default(autoincrement())
-   email String 
-   type OTP 
-   expirerIn DateTime
+  address String
+  value String
+  type OTP 
+  expirerIn DateTime
 }
 
 enum OTP {

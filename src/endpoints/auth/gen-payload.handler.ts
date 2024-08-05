@@ -3,22 +3,23 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 
 import { OtpRepository } from "@root/repositories/otp.repository.js"
+import { OTP } from "@root/shared/constant.js"
 import { PAYLOAD_TTL, SHARED_SECRET } from "@root/shared/env.js"
 const handler: FastifyPluginAsyncZod = async self => {
   self.get(
     "/generate-payload",
     {
       schema: {
-        tags: ["Payload"],
+        tags: ["Auth"],
         querystring: z.object({
-          email: z.string().email()
+          address: z.string()
         })
       }
     },
     async ({ query }) => {
-      const email = query.email
+      const address = query.address
       const now = new Date()
-      const expirerIn = new Date(now.getTime() + 15 * 60000)
+      const expirerIn = new Date(now.getTime() + 15 * 60000) // 15 minute
       const randomBits = crypto.randomBytes(8)
 
       const currentTime = Math.floor(Date.now() / 1000)
@@ -31,7 +32,16 @@ const handler: FastifyPluginAsyncZod = async self => {
       const finalPayload = Buffer.concat([payload, signature])
       const payloadHex = finalPayload.subarray(0, 32).toString("hex")
 
-      await OtpRepository.create({ email, expirerIn, type: "PAYLOAD" })
+      const otp = await OtpRepository.findByAddress(address)
+      if (otp) {
+        await OtpRepository.deleteById(otp.id)
+      }
+      await OtpRepository.create({
+        expirerIn,
+        address,
+        value: payloadHex,
+        type: OTP.PAYLOAD
+      })
 
       return payloadHex
     }

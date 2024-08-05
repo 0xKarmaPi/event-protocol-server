@@ -28,12 +28,14 @@
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.0.1",
     "@prisma/client": "5.17.0",
+    "bs58": "^6.0.0",
     "fastify": "^4.28.1",
     "fastify-plugin": "^4.5.1",
     "fastify-type-provider-zod": "^2.0.0",
     "ioredis": "^5.4.1",
     "lodash": "^4.17.21",
     "luxon": "^3.4.4",
+    "tweetnacl": "^1.0.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {

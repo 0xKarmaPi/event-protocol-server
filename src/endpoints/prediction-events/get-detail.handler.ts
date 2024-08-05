@@ -19,9 +19,7 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
         +params.id
       )
       if (!predictionEvent) {
-        return reply
-          .status(406)
-          .send({ message: "Not found prediction event!" })
+        return reply.notFound("Not found prediction event!")
       }
       return predictionEvent
     }

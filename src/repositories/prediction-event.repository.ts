@@ -9,22 +9,39 @@ export abstract class PredictionEventRepository {
         answers: {
           select: {
             id: true,
-            isCorrect: true,
             acceptableVoteTick: true,
             value: true
           }
         },
         author: {
           select: {
-            hashedCode: true
+            username: true,
+            address: true
           }
         }
       }
     })
   }
 
-  static async findById(id: number) {
-    return prisma.predictionEvent.findUnique({ where: { id } })
+  static async findByAuthorAndId(userId: number, id: number) {
+    return prisma.predictionEvent.findUnique({
+      where: { id, userId },
+      include: {
+        answers: {
+          select: {
+            id: true,
+            isCorrect: true,
+            value: true
+          }
+        },
+        author: {
+          select: {
+            username: true,
+            address: true
+          }
+        }
+      }
+    })
   }
 
   static async findDetailById(id: number) {
@@ -34,14 +51,35 @@ export abstract class PredictionEventRepository {
         answers: {
           select: {
             id: true,
-            isCorrect: true,
             acceptableVoteTick: true,
             value: true
           }
         },
         author: {
           select: {
-            hashedCode: true
+            username: true,
+            address: true
+          }
+        }
+      }
+    })
+  }
+
+  static async findById(id: number) {
+    return prisma.predictionEvent.findUnique({
+      where: { id },
+      include: {
+        answers: {
+          select: {
+            id: true,
+            isCorrect: true,
+            value: true
+          }
+        },
+        author: {
+          select: {
+            username: true,
+            address: true
           }
         }
       }
@@ -55,6 +93,15 @@ export abstract class PredictionEventRepository {
     return prisma.predictionEvent.create({
       data: {
         ...data,
+        userId
+      }
+    })
+  }
+
+  static async delete(userId: number, id: number) {
+    return prisma.predictionEvent.delete({
+      where: {
+        id,
         userId
       }
     })

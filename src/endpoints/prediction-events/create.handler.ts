@@ -14,7 +14,6 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
         tags: ["Prediction Event"],
         security: SECURITY,
         body: z.object({
-          userId: z.number(),
           title: z.string().max(500, "Title is maximum 500 characters").trim(),
           balance: z.string().trim().default("0"),
           endTime: z
@@ -23,13 +22,13 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
         })
       }
     },
-    async ({ body }, reply) => {
-      const { userId, ...payload } = body
-      const user = await UserRepository.findById(+userId)
-      if (!user) {
-        return reply.status(404).send("Not found user")
+    async ({ body, user }, reply) => {
+      const userId = user.id
+      const existUser = await UserRepository.findById(userId)
+      if (!existUser) {
+        throw reply.notFound("Not found user")
       }
-      return PredictionEventRepository.create(userId, payload)
+      return PredictionEventRepository.create(userId, body)
     }
   )
 }

@@ -17,16 +17,15 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
         })
       }
     },
-    async ({ params }, reply) => {
+    async ({ params, user }, reply) => {
       const id = +params.id
-      // Check exist event
-      const predictionEvent = await PredictionEventRepository.findById(id)
-      if (!predictionEvent)
-        return reply
-          .status(406)
-          .send({ message: "Not found prediction event!" })
+      const predictionEvent = await PredictionEventRepository.findByAuthorAndId(
+        user.id,
+        id
+      )
 
-      // return PredictionEventRepository.deleteById(id)
+      if (!predictionEvent) throw reply.notFound("Not found prediction event!")
+      return PredictionEventRepository.delete(user.id, id)
     }
   )
 }
