@@ -14,11 +14,18 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
         tags: ["Prediction Event"],
         security: SECURITY,
         body: z.object({
-          title: z.string().max(500, "Title is maximum 500 characters").trim(),
-          balance: z.string().trim().default("0"),
+          description: z
+            .string()
+            .max(250, "Description is maximum 250 characters")
+            .trim(),
           endTime: z
             .string()
             .datetime({ message: "Invalid datetime string! Must be UTC." })
+            .refine(data => {
+              const endTime = new Date(data)
+              const now = new Date()
+              return endTime.getTime() > now.getTime()
+            }, "End time must be greater than now!")
         })
       }
     },

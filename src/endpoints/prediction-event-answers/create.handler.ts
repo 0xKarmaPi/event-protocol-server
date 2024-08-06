@@ -15,8 +15,12 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
         security: SECURITY,
         body: z.object({
           predictionEventId: z.number(),
-          value: z.string().max(500, "Title is maximum 500 characters").trim(),
-          acceptableVoteTick: z
+          description: z
+            .string()
+            .max(100, "Description is maximum 100 characters")
+            .trim(),
+          balance: z.string(),
+          typeBalance: z
             .string()
             .max(100, "Acceptable vote tick is maximum 100 characters")
             .toLowerCase()
@@ -43,7 +47,7 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
       const isDuplicatedAnswer = predictionEvent.answers.some(
         answer =>
           answer.isCorrect === payload.isCorrect ||
-          answer.value === payload.value
+          answer.description === payload.description
       )
 
       if (isDuplicatedAnswer) {

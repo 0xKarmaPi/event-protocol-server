@@ -8,11 +8,10 @@ datasource db {
 }
 
 model PredictionEvent {
-  id        Int      @id @default(autoincrement())
+  id     Int      @id @default(autoincrement())
   userId Int 
-  title     String
+  description     String
   endTime   DateTime
-  balance   String
   createdAt DateTime @default(now())
   answers PredictionAnswer[]
   author User @relation(fields: [userId], references: [id])
@@ -20,9 +19,10 @@ model PredictionEvent {
 
 model PredictionAnswer{
   id Int @id @default(autoincrement())
-  value String
+  description String
   isCorrect Boolean @default(false)
-  acceptableVoteTick String
+  balance String
+  typeBalance String
   predictionEventId Int
   predictionEvent PredictionEvent @relation(fields: [predictionEventId], references: [id], onDelete: Cascade)
   predictionVotes PredictionVote[]
@@ -32,7 +32,7 @@ model PredictionVote {
   id Int @id @default(autoincrement())
   predictionAnswerId Int
   userId Int 
-  amountBalance String
+  amount Int
   predictionAnswer PredictionAnswer @relation(fields: [predictionAnswerId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -49,10 +49,4 @@ model Otp {
   id Int @id @default(autoincrement())
   address String
   value String
-  type OTP 
-  expirerIn DateTime
-}
-
-enum OTP {
-  PAYLOAD 
 }

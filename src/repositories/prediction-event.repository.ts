@@ -9,8 +9,9 @@ export abstract class PredictionEventRepository {
         answers: {
           select: {
             id: true,
-            acceptableVoteTick: true,
-            value: true
+            balance: true,
+            typeBalance: true,
+            description: true
           }
         },
         author: {
@@ -23,6 +24,41 @@ export abstract class PredictionEventRepository {
     })
   }
 
+  static async findPaginate(page = 1, limit = 20) {
+    const skip = (page - 1) * limit
+
+    const total = await prisma.predictionEvent.count()
+    const data = await prisma.predictionEvent.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc"
+      },
+      include: {
+        answers: {
+          select: {
+            id: true,
+            balance: true,
+            typeBalance: true,
+            description: true
+          }
+        },
+        author: {
+          select: {
+            username: true,
+            address: true
+          }
+        }
+      }
+    })
+
+    return {
+      list: data,
+      maxPage: Math.ceil(total / limit),
+      total
+    }
+  }
+
   static async findByAuthorAndId(userId: number, id: number) {
     return prisma.predictionEvent.findUnique({
       where: { id, userId },
@@ -31,7 +67,7 @@ export abstract class PredictionEventRepository {
           select: {
             id: true,
             isCorrect: true,
-            value: true
+            description: true
           }
         },
         author: {
@@ -51,8 +87,9 @@ export abstract class PredictionEventRepository {
         answers: {
           select: {
             id: true,
-            acceptableVoteTick: true,
-            value: true
+            balance: true,
+            typeBalance: true,
+            description: true
           }
         },
         author: {
@@ -73,7 +110,7 @@ export abstract class PredictionEventRepository {
           select: {
             id: true,
             isCorrect: true,
-            value: true
+            description: true
           }
         },
         author: {

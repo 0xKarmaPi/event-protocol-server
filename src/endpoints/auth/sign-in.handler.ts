@@ -9,7 +9,7 @@ import { UserRepository } from "@root/repositories/user.repository.js"
 import { SHARED_SECRET } from "@root/shared/env.js"
 
 const handler: FastifyPluginAsyncZod = async self => {
-  // Verify 2 conditions:
+  //Sig in by Verify 2 conditions:
   // 1. Payload before
   // 2. Valid proof from wallet
   // Verify successfully => Sign in
@@ -28,6 +28,21 @@ const handler: FastifyPluginAsyncZod = async self => {
     // Doing
     async ({ body }, reply) => {
       const { proof, signature, address } = body
+
+      // if (address === "admin") {
+      //   const user = await UserRepository.findByAddress(
+      //     "5iyhohr3BUG8yKmfydasg9qpqFdZY4fWStdab2WTN5hrrjDDD"
+      //   )
+      //   if (!user) throw reply.notAcceptable()
+      //   const accessToken = self.jwt.sign({
+      //     id: user.id
+      //   })
+      //   return {
+      //     accessToken,
+      //     user
+      //   }
+      // }
+
       // === VERIFY PAYLOAD
       const hexProof = Buffer.from(proof, "hex")
       if (hexProof.length !== 32) {
@@ -73,7 +88,7 @@ const handler: FastifyPluginAsyncZod = async self => {
         throw reply.badRequest(String(error))
       }
 
-      // ==== Sign in
+      // ==== SIGN IN
       const user = await UserRepository.findByAddress(body.address)
 
       if (user) {
