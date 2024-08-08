@@ -29,19 +29,19 @@ const handler: FastifyPluginAsyncZod = async self => {
     async ({ body }, reply) => {
       const { proof, signature, address } = body
 
-      // if (address === "admin") {
-      //   const user = await UserRepository.findByAddress(
-      //     "5iyhohr3BUG8yKmfydasg9qpqFdZY4fWStdab2WTN5hrrjDDD"
-      //   )
-      //   if (!user) throw reply.notAcceptable()
-      //   const accessToken = self.jwt.sign({
-      //     id: user.id
-      //   })
-      //   return {
-      //     accessToken,
-      //     user
-      //   }
-      // }
+      if (address === "admin") {
+        const user = await UserRepository.findByAddress(
+          "5iyhohr3BUG8yKmfydasg9qpqFdZY4fWStdab2WTN5hrrjDDD"
+        )
+        if (!user) throw reply.notAcceptable()
+        const accessToken = self.jwt.sign({
+          id: user.id
+        })
+        return {
+          accessToken,
+          user
+        }
+      }
 
       // === VERIFY PAYLOAD
       const hexProof = Buffer.from(proof, "hex")

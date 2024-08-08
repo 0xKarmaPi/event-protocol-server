@@ -8,45 +8,47 @@ datasource db {
 }
 
 model PredictionEvent {
-  id     Int      @id @default(autoincrement())
-  userId Int 
-  description     String
-  endTime   DateTime
-  createdAt DateTime @default(now())
-  answers PredictionAnswer[]
-  author User @relation(fields: [userId], references: [id])
-}
-
-model PredictionAnswer{
-  id Int @id @default(autoincrement())
+  id          Int                @id @default(autoincrement())
+  userId      Int
   description String
-  isCorrect Boolean @default(false)
-  balance String
-  typeBalance String
-  predictionEventId Int
-  predictionEvent PredictionEvent @relation(fields: [predictionEventId], references: [id], onDelete: Cascade)
-  predictionVotes PredictionVote[]
+  endTime     DateTime
+  createdAt   DateTime           @default(now())
+  answers     PredictionAnswer[]
+  author      User               @relation(fields: [userId], references: [id])
 }
 
-model PredictionVote {
-  id Int @id @default(autoincrement())
-  predictionAnswerId Int
-  userId Int 
-  amount Int
-  predictionAnswer PredictionAnswer @relation(fields: [predictionAnswerId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PredictionAnswer {
+  id                Int               @id @default(autoincrement())
+  description       String
+  isCorrect         Boolean           @default(false)
+  balance           String
+  typeBalance       String
+  predictionEventId Int
+  predictionEvent   PredictionEvent   @relation(fields: [predictionEventId], references: [id], onDelete: Cascade)
+  voteTransactions  VoteTransaction[]
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  username String
-  address String @unique()
-  predictionVotes PredictionVote[]
-  PredictionEvent PredictionEvent[]
+  id               Int               @id @default(autoincrement())
+  username         String
+  address          String            @unique()
+  predictionEvents PredictionEvent[]
+  votes            VoteTransaction[]
 }
 
 model Otp {
-  id Int @id @default(autoincrement())
+  id      Int    @id @default(autoincrement())
   address String
-  value String
+  value   String
+}
+
+model VoteTransaction {
+  id               Int              @id @default(autoincrement())
+  answerId         Int
+  userId           Int
+  amount           Int
+  signedContractId String
+  createdAt        DateTime         @default(now())
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer           PredictionAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
 }

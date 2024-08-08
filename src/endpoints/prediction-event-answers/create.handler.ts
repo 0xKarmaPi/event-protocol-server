@@ -6,7 +6,7 @@ import { PredictionAnswerRepository } from "@root/repositories/prediction-event-
 import { PredictionEventRepository } from "@root/repositories/prediction-event.repository.js"
 import { SECURITY } from "@root/shared/constant.js"
 
-const predictionEventHandler: FastifyPluginAsyncZod = async self => {
+const predictionEventAnswersHandler: FastifyPluginAsyncZod = async self => {
   self.register(authPlugin).post(
     "/",
     {
@@ -61,4 +61,4 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
   )
 }
 
-export default predictionEventHandler
+export default predictionEventAnswersHandler
