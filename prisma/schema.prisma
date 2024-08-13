@@ -7,33 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model PredictionEvent {
-  id          Int                @id @default(autoincrement())
+model Event {
+  id          Int           @id @default(autoincrement())
   userId      Int
   description String
   endTime     DateTime
-  createdAt   DateTime           @default(now())
-  answers     PredictionAnswer[]
-  author      User               @relation(fields: [userId], references: [id])
+  createdAt   DateTime      @default(now())
+  options     EventOption[]
+  author      User          @relation(fields: [userId], references: [id])
 }
 
-model PredictionAnswer {
-  id                Int               @id @default(autoincrement())
-  description       String
-  isCorrect         Boolean           @default(false)
-  balance           String
-  typeBalance       String
-  predictionEventId Int
-  predictionEvent   PredictionEvent   @relation(fields: [predictionEventId], references: [id], onDelete: Cascade)
-  voteTransactions  VoteTransaction[]
+model EventOption {
+  id               Int               @id @default(autoincrement())
+  description      String
+  isCorrect        Boolean           @default(false)
+  token            String
+  address          String            @default("")
+  EventId          Int
+  Event            Event             @relation(fields: [EventId], references: [id], onDelete: Cascade)
+  voteTransactions VoteTransaction[]
 }
 
 model User {
-  id               Int               @id @default(autoincrement())
-  username         String
-  address          String            @unique()
-  predictionEvents PredictionEvent[]
-  votes            VoteTransaction[]
+  id       Int               @id @default(autoincrement())
+  username String
+  address  String            @unique()
+  Events   Event[]
+  votes    VoteTransaction[]
 }
 
 model Otp {
@@ -43,12 +43,12 @@ model Otp {
 }
 
 model VoteTransaction {
-  id               Int              @id @default(autoincrement())
-  answerId         Int
+  id               Int         @id @default(autoincrement())
+  optionId         Int
   userId           Int
   amount           Int
   signedContractId String
-  createdAt        DateTime         @default(now())
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answer           PredictionAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  createdAt        DateTime    @default(now())
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  option           EventOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
 }

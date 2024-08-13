@@ -2,7 +2,7 @@ import { prisma } from "@root/infrastrutures/database.js"
 
 type CreateVoteTransaction = {
   userId: number
-  answerId: number
+  optionId: number
   amount: number
   signedContractId: string
 }

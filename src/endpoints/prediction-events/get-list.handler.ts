@@ -1,9 +1,9 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 
-import { PredictionEventRepository } from "@root/repositories/prediction-event.repository.js"
+import { EventRepository } from "@root/repositories/prediction-event.repository.js"
 
-const predictionEventHandler: FastifyPluginAsyncZod = async self => {
+const EventHandler: FastifyPluginAsyncZod = async self => {
   self.get(
     "/",
     {
@@ -26,9 +26,9 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
     async ({ query }) => {
       const { limit, page } = query
 
-      return PredictionEventRepository.findPaginate(+page, +limit)
+      return EventRepository.findPaginate(+page, +limit)
     }
   )
 }
 
-export default predictionEventHandler
+export default EventHandler

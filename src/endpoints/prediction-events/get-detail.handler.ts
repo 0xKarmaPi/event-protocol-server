@@ -1,9 +1,9 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 
-import { PredictionEventRepository } from "@root/repositories/prediction-event.repository.js"
+import { EventRepository } from "@root/repositories/prediction-event.repository.js"
 
-const predictionEventHandler: FastifyPluginAsyncZod = async self => {
+const EventHandler: FastifyPluginAsyncZod = async self => {
   self.get(
     "/:id",
     {
@@ -15,15 +15,13 @@ const predictionEventHandler: FastifyPluginAsyncZod = async self => {
       }
     },
     async ({ params }, reply) => {
-      const predictionEvent = await PredictionEventRepository.findDetailById(
-        +params.id
-      )
-      if (!predictionEvent) {
+      const Event = await EventRepository.findDetailById(+params.id)
+      if (!Event) {
         return reply.notFound("Not found prediction event!")
       }
-      return predictionEvent
+      return Event
     }
   )
 }
 
-export default predictionEventHandler
+export default EventHandler

@@ -2,24 +2,24 @@ import type { Prisma } from "@prisma/client"
 
 import { prisma } from "@root/infrastrutures/database.js"
 
-export abstract class PredictionAnswerRepository {
+export abstract class EventOptionRepository {
   static async findById(id: number) {
-    return prisma.predictionAnswer.findUnique({ where: { id } })
+    return prisma.eventOption.findUnique({ where: { id } })
   }
 
   static async create(
-    predictionEventId: number,
-    data: Prisma.PredictionAnswerCreateWithoutPredictionEventInput
+    EventId: number,
+    data: Prisma.EventOptionCreateWithoutEventInput
   ) {
-    return prisma.predictionAnswer.create({
+    return prisma.eventOption.create({
       data: {
         ...data,
-        predictionEventId
+        EventId
       }
     })
   }
 
   static async deleteById(id: number) {
-    return prisma.predictionAnswer.delete({ where: { id } })
+    return prisma.eventOption.delete({ where: { id } })
   }
 }

@@ -2,15 +2,15 @@ import type { Prisma } from "@prisma/client"
 
 import { prisma } from "@root/infrastrutures/database.js"
 
-export abstract class PredictionEventRepository {
+export abstract class EventRepository {
   static async findAll() {
-    return prisma.predictionEvent.findMany({
+    return prisma.event.findMany({
       include: {
-        answers: {
+        options: {
           select: {
             id: true,
-            balance: true,
-            typeBalance: true,
+            address: true,
+            token: true,
             description: true
           }
         },
@@ -27,19 +27,19 @@ export abstract class PredictionEventRepository {
   static async findPaginate(page = 1, limit = 20) {
     const skip = (page - 1) * limit
 
-    const total = await prisma.predictionEvent.count()
-    const data = await prisma.predictionEvent.findMany({
+    const total = await prisma.event.count()
+    const data = await prisma.event.findMany({
       skip,
       take: limit,
       orderBy: {
         createdAt: "desc"
       },
       include: {
-        answers: {
+        options: {
           select: {
             id: true,
-            balance: true,
-            typeBalance: true,
+            address: true,
+            token: true,
             description: true
           }
         },
@@ -60,10 +60,10 @@ export abstract class PredictionEventRepository {
   }
 
   static async findByAuthorAndId(userId: number, id: number) {
-    return prisma.predictionEvent.findUnique({
+    return prisma.event.findUnique({
       where: { id, userId },
       include: {
-        answers: {
+        options: {
           select: {
             id: true,
             isCorrect: true,
@@ -81,14 +81,14 @@ export abstract class PredictionEventRepository {
   }
 
   static async findDetailById(id: number) {
-    return prisma.predictionEvent.findUnique({
+    return prisma.event.findUnique({
       where: { id },
       include: {
-        answers: {
+        options: {
           select: {
             id: true,
-            balance: true,
-            typeBalance: true,
+            address: true,
+            token: true,
             description: true
           }
         },
@@ -103,10 +103,10 @@ export abstract class PredictionEventRepository {
   }
 
   static async findById(id: number) {
-    return prisma.predictionEvent.findUnique({
+    return prisma.event.findUnique({
       where: { id },
       include: {
-        answers: {
+        options: {
           select: {
             id: true,
             isCorrect: true,
@@ -125,9 +125,9 @@ export abstract class PredictionEventRepository {
 
   static async create(
     userId: number,
-    data: Prisma.PredictionEventCreateWithoutAuthorInput
+    data: Prisma.EventCreateWithoutAuthorInput
   ) {
-    return prisma.predictionEvent.create({
+    return prisma.event.create({
       data: {
         ...data,
         userId
@@ -136,7 +136,7 @@ export abstract class PredictionEventRepository {
   }
 
   static async delete(userId: number, id: number) {
-    return prisma.predictionEvent.delete({
+    return prisma.event.delete({
       where: {
         id,
         userId

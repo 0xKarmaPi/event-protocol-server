@@ -29,19 +29,19 @@ const handler: FastifyPluginAsyncZod = async self => {
     async ({ body }, reply) => {
       const { proof, signature, address } = body
 
-      if (address === "admin") {
-        const user = await UserRepository.findByAddress(
-          "5iyhohr3BUG8yKmfydasg9qpqFdZY4fWStdab2WTN5hrrjDDD"
-        )
-        if (!user) throw reply.notAcceptable()
-        const accessToken = self.jwt.sign({
-          id: user.id
-        })
-        return {
-          accessToken,
-          user
-        }
-      }
+      // if (address === "admin") {
+      //   const user = await UserRepository.findByAddress(
+      //     "5iyhohr3BUG8yKmfydasg9qpqFdZY4fWStdab2WTN5hrrjDDD"
+      //   )
+      //   if (!user) throw reply.notAcceptable()
+      //   const accessToken = self.jwt.sign({
+      //     id: user.id
+      //   })
+      //   return {
+      //     accessToken,
+      //     user
+      //   }
+      // }
 
       // === VERIFY PAYLOAD
       const hexProof = Buffer.from(proof, "hex")
@@ -104,7 +104,7 @@ const handler: FastifyPluginAsyncZod = async self => {
       // New user register
       const randomString = (Math.random() + 1).toString(36).substring(5)
       const username = "user-" + randomString
-      const newUser = await UserRepository.create({ ...body, username })
+      const newUser = await UserRepository.create({ address, username })
       const accessToken = self.jwt.sign({
         id: newUser.id
       })
