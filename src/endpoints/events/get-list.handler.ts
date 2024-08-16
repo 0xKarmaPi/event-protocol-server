@@ -1,14 +1,14 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 
-import { EventRepository } from "@root/repositories/prediction-event.repository.js"
+import { EventRepository } from "@root/repositories/event.repository.js"
 
 const EventHandler: FastifyPluginAsyncZod = async self => {
   self.get(
     "/",
     {
       schema: {
-        tags: ["Prediction Event"],
+        tags: ["Event"],
         querystring: z.object({
           page: z
             .string()

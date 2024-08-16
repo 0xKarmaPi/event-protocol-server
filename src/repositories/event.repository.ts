@@ -26,7 +26,6 @@ export abstract class EventRepository {
 
   static async findPaginate(page = 1, limit = 20) {
     const skip = (page - 1) * limit
-
     const total = await prisma.event.count()
     const data = await prisma.event.findMany({
       skip,

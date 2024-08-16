@@ -2,8 +2,8 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 
 import authPlugin from "@root/plugins/auth.plugin.js"
-import { EventOptionRepository } from "@root/repositories/prediction-event-answer.repository.js"
-import { EventRepository } from "@root/repositories/prediction-event.repository.js"
+import { EventOptionRepository } from "@root/repositories/event-option.repository.js"
+import { EventRepository } from "@root/repositories/event.repository.js"
 import { UserRepository } from "@root/repositories/user.repository.js"
 import { SECURITY } from "@root/shared/constant.js"
 
@@ -12,7 +12,7 @@ const EventHandler: FastifyPluginAsyncZod = async self => {
     "/",
     {
       schema: {
-        tags: ["Prediction Event"],
+        tags: ["Event"],
         security: SECURITY,
         body: z.object({
           description: z

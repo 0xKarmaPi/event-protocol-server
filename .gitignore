@@ -42,6 +42,7 @@ lerna-debug.log*
 /.eslintcache
 /memo.txt
 
+.env
 .env.development
 .env.production
 .env.local

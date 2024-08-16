@@ -24,7 +24,7 @@ model EventOption {
   token            String
   address          String            @default("")
   EventId          Int
-  Event            Event             @relation(fields: [EventId], references: [id], onDelete: Cascade)
+  Event            Event             @relation(fields: [EventId], references: [id])
   voteTransactions VoteTransaction[]
 }
 
@@ -32,6 +32,7 @@ model User {
   id       Int               @id @default(autoincrement())
   username String
   address  String            @unique()
+  bio      String            @default("")
   Events   Event[]
   votes    VoteTransaction[]
 }
@@ -49,6 +50,6 @@ model VoteTransaction {
   amount           Int
   signedContractId String
   createdAt        DateTime    @default(now())
-  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  option           EventOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user             User        @relation(fields: [userId], references: [id])
+  option           EventOption @relation(fields: [optionId], references: [id])
 }
