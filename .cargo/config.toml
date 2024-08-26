@@ -1,0 +1,4 @@
+[alias]
+server = "run -p http-server --release"
+stream = "run -p stream --release"
+scan = "run -p scanner --release"
