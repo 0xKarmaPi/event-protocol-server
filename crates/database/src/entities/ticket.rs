@@ -1,6 +1,7 @@
-use crate::native_enums::Side;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+
+use crate::native_enums::Side;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "ticket")]
@@ -11,6 +12,7 @@ pub struct Model {
     pub selection: Side,
     #[sea_orm(column_type = "Decimal(Some((80, 0)))")]
     pub amount: Decimal,
+    pub created_date: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

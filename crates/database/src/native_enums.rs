@@ -4,6 +4,15 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "context")]
+pub enum Context {
+    #[sea_orm(string_value = "scanner")]
+    Scanner,
+    #[sea_orm(string_value = "stream")]
+    Stream,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "event")]
 pub enum Event {
     #[sea_orm(string_value = "deploy_event")]

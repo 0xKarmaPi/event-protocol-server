@@ -27,7 +27,8 @@ pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<()
         creator: Set(event.creator.to_string()),
         burning: Set(event.burning),
         result: Set(None),
-        created_date: Set(Default::default()),
+        created_date: Default::default(),
+        deleted: Default::default(),
     };
 
     prediction_event::Entity::insert(model).exec(db).await?;
@@ -40,7 +41,7 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
 
     prediction_event::Entity::update_many()
         .col_expr(prediction_event::Column::Result, result.as_enum())
-        .filter(prediction_event::Column::Id.eq(event.event_id.to_string()))
+        .filter(prediction_event::Column::Pubkey.eq(event.key.to_string()))
         .exec(db)
         .await?;
 

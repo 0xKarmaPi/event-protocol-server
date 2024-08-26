@@ -1,7 +1,7 @@
 use crate::entities::prediction_event;
-
-pub use prediction_event::Model as PredictionEvent;
 use sea_orm::FromQueryResult;
+
+pub type PredictionEvent = prediction_event::Model;
 
 #[derive(FromQueryResult, Default)]
 pub struct Count {

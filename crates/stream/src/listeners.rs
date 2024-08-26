@@ -1,7 +1,7 @@
 use crate::error::StreamError;
 use database::{
-    native_enums::Event,
-    repositories::{prediction_event, stream_snapshot, ticket},
+    native_enums::{Context, Event},
+    repositories::{prediction_event, signature_snapshot, ticket},
     sea_orm::DatabaseConnection,
 };
 use program::events::{DeployEvtEvent, FinishEvtEvent, VoteEvtEvent};
@@ -11,10 +11,14 @@ pub async fn _on_deploy_event(
     event: DeployEvtEvent,
     signature: &str,
 ) -> Result<(), StreamError> {
-    println!("key: {}", &event.key.to_string());
-
     prediction_event::create(db, event).await?;
-    stream_snapshot::create(db, signature.to_string(), Event::DeployEvent).await?;
+    signature_snapshot::create(
+        db,
+        signature.to_string(),
+        Event::DeployEvent,
+        Context::Stream,
+    )
+    .await?;
 
     println!("deploy_event done > {}", signature);
     Ok(())
@@ -26,7 +30,8 @@ pub async fn _on_vote_event(
     signature: &str,
 ) -> Result<(), StreamError> {
     ticket::create_or_update_amount(db, event).await?;
-    stream_snapshot::create(db, signature.to_string(), Event::VoteEvent).await?;
+    signature_snapshot::create(db, signature.to_string(), Event::VoteEvent, Context::Stream)
+        .await?;
 
     println!("vote_event done > {}", signature);
     Ok(())
@@ -38,7 +43,13 @@ pub async fn _on_finish_event(
     signature: &str,
 ) -> Result<(), StreamError> {
     prediction_event::set_result(db, event).await?;
-    stream_snapshot::create(db, signature.to_string(), Event::FinishEvent).await?;
+    signature_snapshot::create(
+        db,
+        signature.to_string(),
+        Event::FinishEvent,
+        Context::Stream,
+    )
+    .await?;
 
     println!("finish_event done > {}", signature);
     Ok(())

@@ -23,4 +23,6 @@ pub struct Ticket {
     pub creator: Pubkey,
     pub amount: u64,
     pub selection: Side,
+    pub claimed: bool,
+    pub withdrawn: bool,
 }

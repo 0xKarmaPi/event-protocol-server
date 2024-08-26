@@ -20,16 +20,37 @@ pub struct DeployEvtEvent {
 
 #[derive(Debug, BorshDeserialize)]
 pub struct FinishEvtEvent {
-    pub event_id: Pubkey,
+    pub key: Pubkey,
     pub result: Side,
 }
 
 #[derive(Debug, BorshDeserialize)]
 pub struct VoteEvtEvent {
-    pub key: Pubkey,
-    pub event_id: Pubkey,
+    pub ticket_key: Pubkey,
+    pub event_key: Pubkey,
     pub creator: Pubkey,
     pub selection: Side,
+    pub current_amount: u64,
+}
+
+#[derive(Debug, BorshDeserialize)]
+pub struct ClaimRewardsEvent {
+    pub event_key: Pubkey,
+    pub ticket_key: Pubkey,
+    pub signer: Pubkey,
+    pub amount: u64,
+}
+
+#[derive(Debug, BorshDeserialize)]
+pub struct CloseEvtEvent {
+    pub key: Pubkey,
+}
+
+#[derive(Debug, BorshDeserialize)]
+pub struct WithdrawEvent {
+    pub event_key: Pubkey,
+    pub ticket_key: Pubkey,
+    pub signer: Pubkey,
     pub amount: u64,
 }
 

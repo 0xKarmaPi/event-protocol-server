@@ -9,7 +9,6 @@ use utoipa::ToSchema;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,
-    pub created_date: DateTimeWithTimeZone,
     #[sea_orm(unique)]
     pub pubkey: String,
     pub creator: String,
@@ -24,8 +23,9 @@ pub struct Model {
     pub start_date: DateTimeWithTimeZone,
     pub end_date: DateTimeWithTimeZone,
     pub burning: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<Side>,
+    pub deleted: bool,
+    pub created_date: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -19,22 +19,25 @@ model prediction_event {
   right_mint        String?  @db.VarChar(44)
   start_date        DateTime @db.Timestamptz(3)
   end_date          DateTime @db.Timestamptz(3)
-  created_date      DateTime @db.Timestamptz(3) @default(now())
   burning           Boolean
   result            side?
+  deleted           Boolean  @default(false)
+  created_date      DateTime @default(now()) @db.Timestamptz(3)
 }
 
 model ticket {
-  pubkey    String  @id @db.VarChar(44)
-  creator   String  @db.VarChar(44)
-  selection side
-  amount    Decimal @db.Decimal(80, 0)
+  pubkey       String   @id @db.VarChar(44)
+  creator      String   @db.VarChar(44)
+  selection    side
+  amount       Decimal  @db.Decimal(80, 0)
+  created_date DateTime @default(now()) @db.Timestamptz(3)
 }
 
-model stream_snapshot {
-  signature String   @id @db.VarChar
-  event     event
-  date      DateTime @default(now()) @db.Timestamptz(3)
+model signature_snapshot {
+  signature    String   @id @db.VarChar
+  event        event
+  context      context
+  created_date DateTime @default(now()) @db.Timestamptz(3)
 }
 
 model setting {
@@ -51,4 +54,9 @@ enum event {
   deploy_event
   vote_event
   finish_event
+}
+
+enum context {
+  stream
+  scanner
 }

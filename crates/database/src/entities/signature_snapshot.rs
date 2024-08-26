@@ -1,15 +1,16 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::native_enums::Event;
+use crate::native_enums::{Context, Event};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "stream_snapshot")]
+#[sea_orm(table_name = "signature_snapshot")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub signature: String,
-    pub date: DateTimeWithTimeZone,
     pub event: Event,
+    pub context: Context,
+    pub created_date: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

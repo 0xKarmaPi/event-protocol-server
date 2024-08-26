@@ -2,7 +2,7 @@ mod error;
 mod listeners;
 
 use database::{
-    repositories::stream_snapshot,
+    repositories::signature_snapshot,
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
 use dotenv::dotenv;
@@ -24,19 +24,21 @@ async fn main() {
     dotenv().expect("failt to load env");
     let opt = ConnectOptions::new(std::env::var("DATABASE_URL").expect("missing DATABASE_URL env"));
 
+    let ws_url = std::env::var("WS_URL").expect("missing WS_URL env");
+
     let db = Database::connect(opt)
         .await
         .expect("fail to connect to datbase");
 
     loop {
-        stream(&db)
+        stream(&db, &ws_url)
             .await
             .unwrap_or_else(|error| eprint!("stream error {:#?}", error));
     }
 }
 
-async fn stream(db: &DatabaseConnection) -> Result<(), PubsubClientError> {
-    let client = PubsubClient::new("wss://api.devnet.solana.com/").await?;
+async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClientError> {
+    let client = PubsubClient::new(ws_url).await?;
 
     let filter = RpcTransactionLogsFilter::Mentions(vec![PROGRAM_ID_STR.to_string()]);
 
@@ -52,7 +54,7 @@ async fn stream(db: &DatabaseConnection) -> Result<(), PubsubClientError> {
         let signature = response.value.signature;
 
         // sometime the websocket sends logs duplicate, skip if resolved
-        let snapshot = stream_snapshot::find_by_signature(db, &signature)
+        let snapshot = signature_snapshot::find_by_signature(db, &signature)
             .await
             .unwrap_or_else(|e| {
                 eprintln!("find snapshot failed {:#?}", e);
