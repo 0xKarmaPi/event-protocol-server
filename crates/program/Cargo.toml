@@ -1,0 +1,13 @@
+[package]
+name = "program"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+solana-client = "2.0.7"
+base64 = "0.22.1"
+thiserror = "1.0.63"
+solana-sdk = { version = "2.0.7", default-features = false, features = [
+    "generic-array",
+] }
+borsh = "1.5.1"

@@ -1,0 +1,18 @@
+[package]
+name = "stream"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+program = { path = "../program" }
+database = { path = "../database" }
+
+dotenv = "0.15.0"
+tokio = { version = "1.39.3", features = ["rt-multi-thread"] }
+thiserror = "1.0.63"
+futures = "0.3.30"
+
+solana-client = "2.0.7"
+solana-sdk = { version = "2.0.7", default-features = false, features = [
+    "generic-array",
+] }

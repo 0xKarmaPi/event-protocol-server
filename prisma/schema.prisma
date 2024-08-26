@@ -1,0 +1,54 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  pubkey String @id @db.VarChar(44)
+}
+
+model prediction_event {
+  id                String   @id @db.VarChar(44)
+  pubkey            String   @unique @db.VarChar(44)
+  creator           String   @db.VarChar(44)
+  title             String   @db.VarChar(50)
+  description       String   @db.VarChar(100)
+  left_description  String   @db.VarChar(100)
+  right_description String   @db.VarChar(100)
+  left_mint         String?  @db.VarChar(44)
+  right_mint        String?  @db.VarChar(44)
+  start_date        DateTime @db.Timestamptz(3)
+  end_date          DateTime @db.Timestamptz(3)
+  created_date      DateTime @db.Timestamptz(3) @default(now())
+  burning           Boolean
+  result            side?
+}
+
+model ticket {
+  pubkey    String  @id @db.VarChar(44)
+  creator   String  @db.VarChar(44)
+  selection side
+  amount    Decimal @db.Decimal(80, 0)
+}
+
+model stream_snapshot {
+  signature String   @id @db.VarChar
+  event     event
+  date      DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model setting {
+  key   String @id @db.VarChar
+  value String @db.VarChar
+}
+
+enum side {
+  left
+  right
+}
+
+enum event {
+  deploy_event
+  vote_event
+  finish_event
+}
