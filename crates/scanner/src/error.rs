@@ -9,4 +9,10 @@ pub enum ScannerError {
 
     #[error(transparent)]
     ParseSignatureError(#[from] solana_sdk::signature::ParseSignatureError),
+
+    #[error(transparent)]
+    DbError(#[from] database::sea_orm::DbErr),
+
+    #[error(transparent)]
+    ProgramError(#[from] program::error::ProgramError),
 }

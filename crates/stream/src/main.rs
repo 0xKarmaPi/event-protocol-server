@@ -7,7 +7,10 @@ use database::{
 };
 use dotenv::dotenv;
 use futures::StreamExt;
-use listeners::{_on_deploy_event, _on_finish_event, _on_vote_event};
+use listeners::{
+    _on_claim_rewards, _on_close_event, _on_deploy_event, _on_finish_event, _on_vote_event,
+    _on_withdraw,
+};
 use program::{
     log::{parse_logs, Event},
     PROGRAM_ID_STR,
@@ -21,7 +24,7 @@ use solana_sdk::commitment_config::CommitmentConfig;
 
 #[tokio::main]
 async fn main() {
-    dotenv().expect("failt to load env");
+    dotenv().expect("fail to load env");
     let opt = ConnectOptions::new(std::env::var("DATABASE_URL").expect("missing DATABASE_URL env"));
 
     let ws_url = std::env::var("WS_URL").expect("missing WS_URL env");
@@ -43,7 +46,7 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClien
     let filter = RpcTransactionLogsFilter::Mentions(vec![PROGRAM_ID_STR.to_string()]);
 
     let config = RpcTransactionLogsConfig {
-        commitment: Some(CommitmentConfig::confirmed()),
+        commitment: Some(CommitmentConfig::finalized()),
     };
 
     let (mut notifications, _unsubscribe) = client.logs_subscribe(filter, config).await?;
@@ -69,6 +72,9 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClien
                     Event::DeployEvent(event) => _on_deploy_event(db, event, &signature).await,
                     Event::VoteEvent(event) => _on_vote_event(db, event, &signature).await,
                     Event::FinishEvent(event) => _on_finish_event(db, event, &signature).await,
+                    Event::CloseEvent(event) => _on_close_event(db, event, &signature).await,
+                    Event::ClaimRewards(event) => _on_claim_rewards(db, event, &signature).await,
+                    Event::Withdraw(event) => _on_withdraw(db, event, &signature).await,
                 }
                 .unwrap_or_else(|e| eprintln!("error from listener {:#?}", e));
             }

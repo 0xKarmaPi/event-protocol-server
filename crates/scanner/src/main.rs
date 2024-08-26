@@ -1,64 +1,98 @@
 mod error;
+mod handlers;
 
-use database::sea_orm::{ConnectOptions, Database};
+use database::{
+    native_enums::Context,
+    repositories::{
+        setting::{self, Setting},
+        signature_snapshot,
+    },
+    sea_orm::{ConnectOptions, Database, DatabaseConnection},
+};
 use dotenv::dotenv;
 use error::ScannerError;
+use handlers::{
+    process_claim_reward, process_close_event, process_deploy_event, process_finish_event,
+    process_vote_event, process_withdraw,
+};
 use program::{
-    accounts::PredictionEvent,
     log::{parse_logs, Event},
     PROGRAM_ID_STR,
 };
 use solana_client::{
     nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
 };
-use solana_sdk::{pubkey::Pubkey, signature::Signature};
+use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signature::Signature};
 use solana_transaction_status::UiTransactionEncoding;
 use std::{str::FromStr, time::Duration};
 
 #[tokio::main]
-async fn main() -> Result<(), ScannerError> {
-    dotenv().expect("failt to load env");
+async fn main() {
+    dotenv().expect("fail to load env");
 
     let client = RpcClient::new("https://api.devnet.solana.com".to_string());
 
-    let program_id = Pubkey::from_str(PROGRAM_ID_STR)?;
+    let program_id = Pubkey::from_str(PROGRAM_ID_STR).expect("invalid program id");
 
     let opt = ConnectOptions::new(std::env::var("DATABASE_URL").expect("missing DATABASE_URL env"));
 
-    let _db = Database::connect(opt)
+    let db = Database::connect(opt)
         .await
         .expect("fail to connect to datbase");
 
-    let account = program::deserialize_account::<PredictionEvent>(
-        &client,
-        &Pubkey::from_str("2Fm2TWAnX1JDfJ1kLbozjJsg58aCGJhKYXtRNBSwCYs6")?,
-    )
-    .await
-    .unwrap();
-
-    dbg!(account);
+    let mut lastest_signature = setting::get(&db, Setting::LastestScannedSignature)
+        .await
+        .expect("fail to get lastest_scanned_signature setting")
+        .expect("lastest_scanned_signature setting not found");
 
     loop {
-        let config = GetConfirmedSignaturesForAddress2Config {
-            limit: Some(10),
-            until:Some(Signature::from_str("2RyjAgV7Hq7fh7i4E4ZwWMDwYYg6RCzQfJPJSXjBhW6pVzCce2H1hTayGrpd5Lp1Q285yfZEh2AAofLyobRTU146").unwrap()),
-            ..Default::default()
-        };
+        scan(&db, &client, &program_id, &mut lastest_signature)
+            .await
+            .unwrap_or_else(|error| eprintln!("{}", error));
 
-        let signatures: Vec<String> = client
-            .get_signatures_for_address_with_config(&program_id, config)
+        setting::set(
+            &db,
+            Setting::LastestScannedSignature,
+            lastest_signature.clone(),
+        )
+        .await
+        .unwrap_or_else(|error| eprintln!("fail to set lastest_scanned_signature {}", error));
+
+        tokio::time::sleep(Duration::from_millis(6000)).await;
+    }
+}
+
+async fn scan(
+    db: &DatabaseConnection,
+    client: &RpcClient,
+    program_id: &Pubkey,
+    signture_cursor: &mut String,
+) -> Result<(), ScannerError> {
+    let config = GetConfirmedSignaturesForAddress2Config {
+        limit: Some(20),
+        until: Some(Signature::from_str(signture_cursor)?),
+        commitment: Some(CommitmentConfig::finalized()),
+        before: None,
+    };
+
+    let signatures: Vec<String> = client
+        .get_signatures_for_address_with_config(&program_id, config)
+        .await?
+        .into_iter()
+        .map(|tx| tx.signature)
+        .rev()
+        .collect();
+
+    dbg!(&signatures);
+
+    for sig in signatures {
+        let is_resolved = signature_snapshot::find_by_signature(db, &sig)
             .await?
-            .into_iter()
-            .map(|tx| tx.signature)
-            .rev()
-            .collect();
+            .is_some();
 
-        for signature in signatures {
+        if !is_resolved {
             let tx = client
-                .get_transaction(
-                    &Signature::from_str(&signature)?,
-                    UiTransactionEncoding::Base58,
-                )
+                .get_transaction(&Signature::from_str(&sig)?, UiTransactionEncoding::Base58)
                 .await?;
 
             let event = tx
@@ -69,20 +103,23 @@ async fn main() -> Result<(), ScannerError> {
                 .and_then(parse_logs);
 
             if let Some(event) = event {
-                match event {
+                match &event {
                     Event::DeployEvent(event) => {
-                        dbg!(event);
+                        process_deploy_event(&db, client, event, &sig).await?
                     }
-                    Event::VoteEvent(event) => {
-                        dbg!(event);
-                    }
-                    Event::FinishEvent(event) => {
-                        dbg!(event);
-                    }
-                }
+                    Event::VoteEvent(event) => process_vote_event(&db, event, &sig).await?,
+                    Event::FinishEvent(event) => process_finish_event(&db, event, &sig).await?,
+                    Event::ClaimRewards(event) => process_claim_reward(&db, event, &sig).await?,
+                    Event::CloseEvent(event) => process_close_event(&db, event, &sig).await?,
+                    Event::Withdraw(event) => process_withdraw(&db, event, &sig).await?,
+                };
+
+                signature_snapshot::create(db, sig.clone(), event.into(), Context::Scanner).await?;
             }
         }
 
-        tokio::time::sleep(Duration::from_millis(2000)).await;
+        *signture_cursor = sig;
     }
+
+    Ok(())
 }

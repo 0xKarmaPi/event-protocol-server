@@ -4,7 +4,9 @@ use database::{
     repositories::{prediction_event, signature_snapshot, ticket},
     sea_orm::DatabaseConnection,
 };
-use program::events::{DeployEvtEvent, FinishEvtEvent, VoteEvtEvent};
+use program::events::{
+    ClaimRewardsEvent, CloseEvtEvent, DeployEvtEvent, FinishEvtEvent, VoteEvtEvent, WithdrawEvent,
+};
 
 pub async fn _on_deploy_event(
     db: &DatabaseConnection,
@@ -52,5 +54,62 @@ pub async fn _on_finish_event(
     .await?;
 
     println!("finish_event done > {}", signature);
+    Ok(())
+}
+
+pub async fn _on_close_event(
+    db: &DatabaseConnection,
+    event: CloseEvtEvent,
+    signature: &str,
+) -> Result<(), StreamError> {
+    prediction_event::close(db, &event.key.to_string()).await?;
+    signature_snapshot::create(
+        db,
+        signature.to_string(),
+        Event::FinishEvent,
+        Context::Stream,
+    )
+    .await?;
+
+    println!("close_event done > {}", signature);
+
+    Ok(())
+}
+
+pub async fn _on_claim_rewards(
+    db: &DatabaseConnection,
+    event: ClaimRewardsEvent,
+    signature: &str,
+) -> Result<(), StreamError> {
+    ticket::set_claimed_by_pubkey(db, &event.ticket_key.to_string()).await?;
+    signature_snapshot::create(
+        db,
+        signature.to_string(),
+        Event::FinishEvent,
+        Context::Stream,
+    )
+    .await?;
+
+    println!("claim_rewards done > {}", signature);
+
+    Ok(())
+}
+
+pub async fn _on_withdraw(
+    db: &DatabaseConnection,
+    event: WithdrawEvent,
+    signature: &str,
+) -> Result<(), StreamError> {
+    ticket::set_withdrawn_by_pubkey(db, &event.ticket_key.to_string()).await?;
+    signature_snapshot::create(
+        db,
+        signature.to_string(),
+        Event::FinishEvent,
+        Context::Stream,
+    )
+    .await?;
+
+    println!("withdraw done > {}", signature);
+
     Ok(())
 }
