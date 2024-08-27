@@ -38,7 +38,9 @@ impl FromRef<AppState> for DatabaseConnection {
 
 impl AppState {
     pub async fn new(db_url: String) -> Result<Self, HttpException> {
-        let opt = ConnectOptions::new(db_url);
+        let mut opt = ConnectOptions::new(db_url);
+
+        opt.sqlx_logging(false);
 
         let database_connection = Database::connect(opt).await?;
 

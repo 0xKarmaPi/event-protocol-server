@@ -23,7 +23,9 @@ pub struct Model {
     pub start_date: DateTimeWithTimeZone,
     pub end_date: DateTimeWithTimeZone,
     pub burning: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<Side>,
+    #[serde(skip)]
     pub deleted: bool,
     pub created_date: DateTimeWithTimeZone,
 }

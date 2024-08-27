@@ -12,8 +12,7 @@ use dotenv::dotenv;
 use extractors::state::AppState;
 use handlers::*;
 use tower_http::cors::CorsLayer;
-use tracing::level_filters::LevelFilter;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -22,7 +21,7 @@ async fn main() {
     dotenv().expect("fail to load env");
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().with_filter(LevelFilter::ERROR))
+        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let db_url = std::env::var("DATABASE_URL").expect("missing DATABASE_URL");
