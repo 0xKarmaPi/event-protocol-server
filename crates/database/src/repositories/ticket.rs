@@ -1,4 +1,4 @@
-use program::events::VoteEvtEvent;
+use program::{accounts::Ticket, events::VoteEvtEvent};
 use sea_orm::{
     sea_query::Expr, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel,
     QueryFilter, Set,
@@ -54,6 +54,40 @@ pub async fn set_withdrawn_by_pubkey(db: &DatabaseConnection, pubkey: &str) -> R
         .filter(ticket::Column::Pubkey.eq(pubkey))
         .exec(db)
         .await?;
+
+    Ok(())
+}
+
+pub async fn create_or_update_amount_from_account(
+    db: &DatabaseConnection,
+    event: VoteEvtEvent,
+    account: Ticket,
+) -> Result<(), DbErr> {
+    let ticket = ticket::Entity::find_by_id(event.ticket_key.to_string())
+        .one(db)
+        .await?;
+
+    if let Some(ticket) = ticket {
+        let mut model = ticket.into_active_model();
+
+        model.amount = Set(account.amount.into());
+
+        ticket::Entity::update(model).exec(db).await?;
+    } else {
+        let model = ticket::ActiveModel {
+            pubkey: Set(event.ticket_key.to_string()),
+            event_pubkey: Set(event.event_key.to_string()),
+
+            creator: Set(account.creator.to_string()),
+            amount: Set(account.amount.into()),
+            selection: Set(account.selection.into()),
+            claimed: Set(account.claimed),
+            withdrawn: Set(account.withdrawn),
+            created_date: Default::default(),
+        };
+
+        ticket::Entity::insert(model).exec(db).await?;
+    }
 
     Ok(())
 }

@@ -27,7 +27,7 @@ pub async fn set(db: &DatabaseConnection, key: Setting, value: String) -> Result
 }
 
 impl Setting {
-    fn to_str_key(&self) -> String {
+    fn to_str_key(self) -> String {
         match self {
             Self::LastestScannedSignature => "lastest_scanned_signature".to_string(),
         }

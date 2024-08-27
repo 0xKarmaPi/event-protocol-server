@@ -63,7 +63,7 @@ pub async fn close(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> {
 
 pub async fn create_from_account(
     db: &DatabaseConnection,
-    event: &DeployEvtEvent,
+    event: DeployEvtEvent,
     account: PredictionEvent,
 ) -> Result<(), DbErr> {
     let record = prediction_event::Entity::find_by_id(account.id.to_string())

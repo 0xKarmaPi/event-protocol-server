@@ -27,7 +27,7 @@ pub enum Event {
 
 /// https://book.anchor-lang.com/anchor_bts/discriminator.html
 pub fn parse_logs(logs: Vec<String>) -> Option<Event> {
-    let instruction = logs.iter().find(|log| filter(*log))?.as_str();
+    let instruction = logs.iter().find(|log| filter(log))?.as_str();
 
     let data = logs
         .iter()

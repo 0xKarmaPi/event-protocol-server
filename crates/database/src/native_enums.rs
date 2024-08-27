@@ -49,8 +49,8 @@ impl From<events::Side> for Side {
     }
 }
 
-impl From<log::Event> for Event {
-    fn from(event: log::Event) -> Self {
+impl Event {
+    pub fn from_ref(event: &log::Event) -> Self {
         match event {
             log::Event::VoteEvent(_) => Self::VoteEvent,
             log::Event::DeployEvent(_) => Self::DeployEvent,
