@@ -18,5 +18,11 @@ pub async fn deserialize_account<T: BorshDeserialize>(
 
     let data: &mut &[u8] = &mut &data.as_slice()[8..];
 
-    T::deserialize(data).map_err(Into::into)
+    T::deserialize(data).map_err(|error| {
+        if error.to_string().starts_with("AccountNotFound") {
+            ProgramError::AccountNotFound(pubkey.to_string())
+        } else {
+            error.into()
+        }
+    })
 }

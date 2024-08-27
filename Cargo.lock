@@ -3649,6 +3649,8 @@ dependencies = [
  "solana-transaction-status",
  "thiserror",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -5166,6 +5168,8 @@ dependencies = [
  "solana-sdk",
  "thiserror",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

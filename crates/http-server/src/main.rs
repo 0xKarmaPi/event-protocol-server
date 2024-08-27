@@ -41,7 +41,7 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
 
-    println!(
+    tracing::info!(
         "🦀 server is listening on {}",
         listener.local_addr().unwrap()
     );

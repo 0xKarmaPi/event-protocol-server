@@ -5,4 +5,7 @@ pub enum ProgramError {
 
     #[error(transparent)]
     BorshDeserializeError(#[from] std::io::Error),
+
+    #[error("account not found: pubkey={0}")]
+    AccountNotFound(String),
 }

@@ -1,4 +1,4 @@
-use program::events;
+use program::{events, log};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -15,12 +15,18 @@ pub enum Context {
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "event")]
 pub enum Event {
+    #[sea_orm(string_value = "claim_rewards")]
+    ClaimRewards,
+    #[sea_orm(string_value = "close_event")]
+    CloseEvent,
     #[sea_orm(string_value = "deploy_event")]
     DeployEvent,
     #[sea_orm(string_value = "finish_event")]
     FinishEvent,
     #[sea_orm(string_value = "vote_event")]
     VoteEvent,
+    #[sea_orm(string_value = "withdraw")]
+    Withdraw,
 }
 
 #[derive(
@@ -39,6 +45,19 @@ impl From<events::Side> for Side {
         match side {
             events::Side::Left => Self::Left,
             events::Side::Right => Self::Right,
+        }
+    }
+}
+
+impl Event {
+    pub fn from_ref(event: &log::Event) -> Self {
+        match event {
+            log::Event::VoteEvent(_) => Self::VoteEvent,
+            log::Event::DeployEvent(_) => Self::DeployEvent,
+            log::Event::FinishEvent(_) => Self::FinishEvent,
+            log::Event::CloseEvent(_) => Self::CloseEvent,
+            log::Event::ClaimRewards(_) => Self::ClaimRewards,
+            log::Event::Withdraw(_) => Self::Withdraw,
         }
     }
 }

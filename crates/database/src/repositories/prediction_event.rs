@@ -1,17 +1,20 @@
-use program::events::{DeployEvtEvent, FinishEvtEvent};
+use program::{
+    accounts::PredictionEvent,
+    events::{DeployEvtEvent, FinishEvtEvent},
+};
 use sea_orm::{
-    prelude::DateTimeUtc, ActiveEnum, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
-    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
+    prelude::DateTimeUtc, sea_query::Expr, ActiveEnum, ColumnTrait, DatabaseConnection, DbErr,
+    EntityTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
 };
 
 use crate::{entities::prediction_event, models::Count, native_enums::Side};
 
 pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<(), DbErr> {
     let start_date = DateTimeUtc::from_timestamp(event.start_date as i64, 0)
-        .ok_or(DbErr::Custom("invlaid date start_date".to_string()))?;
+        .ok_or(DbErr::Custom("invalid date start_date".to_string()))?;
 
     let end_date = DateTimeUtc::from_timestamp(event.end_date as i64, 0)
-        .ok_or(DbErr::Custom("invlaid date end_date".to_string()))?;
+        .ok_or(DbErr::Custom("invalid date end_date".to_string()))?;
 
     let model = prediction_event::ActiveModel {
         id: Set(event.id.to_string()),
@@ -44,6 +47,58 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
         .filter(prediction_event::Column::Pubkey.eq(event.key.to_string()))
         .exec(db)
         .await?;
+
+    Ok(())
+}
+
+pub async fn close(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> {
+    prediction_event::Entity::update_many()
+        .col_expr(prediction_event::Column::Deleted, Expr::value(true))
+        .filter(prediction_event::Column::Pubkey.eq(pubkey))
+        .exec(db)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn create_from_account(
+    db: &DatabaseConnection,
+    event: DeployEvtEvent,
+    account: PredictionEvent,
+) -> Result<(), DbErr> {
+    let record = prediction_event::Entity::find_by_id(account.id.to_string())
+        .one(db)
+        .await?;
+
+    let start_date = DateTimeUtc::from_timestamp(account.start_date as i64, 0)
+        .ok_or(DbErr::Custom("invalid date start_date".to_string()))?;
+
+    let end_date = DateTimeUtc::from_timestamp(account.end_date as i64, 0)
+        .ok_or(DbErr::Custom("invalid date end_date".to_string()))?;
+
+    if record.is_none() {
+        let model = prediction_event::ActiveModel {
+            pubkey: Set(event.key.to_string()),
+            title: Set(event.title.to_string()),
+            description: Set(event.description.to_string()),
+            left_description: Set(event.left_description.to_string()),
+            right_description: Set(event.right_description.to_string()),
+
+            id: Set(account.id.to_string()),
+            left_mint: Set(account.left_mint.map(|mint| mint.to_string())),
+            right_mint: Set(account.right_mint.map(|mint| mint.to_string())),
+            start_date: Set(start_date.into()),
+            end_date: Set(end_date.into()),
+
+            creator: Set(account.creator.to_string()),
+            burning: Set(account.burning),
+            result: Set(account.result.map(Into::into)),
+            created_date: Default::default(),
+            deleted: Default::default(),
+        };
+
+        prediction_event::Entity::insert(model).exec(db).await?;
+    }
 
     Ok(())
 }

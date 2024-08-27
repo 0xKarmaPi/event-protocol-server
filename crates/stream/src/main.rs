@@ -2,12 +2,16 @@ mod error;
 mod listeners;
 
 use database::{
+    native_enums::{self, Context},
     repositories::signature_snapshot,
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
 use dotenv::dotenv;
 use futures::StreamExt;
-use listeners::{_on_deploy_event, _on_finish_event, _on_vote_event};
+use listeners::{
+    _on_claim_rewards, _on_close_event, _on_deploy_event, _on_finish_event, _on_vote_event,
+    _on_withdraw,
+};
 use program::{
     log::{parse_logs, Event},
     PROGRAM_ID_STR,
@@ -21,8 +25,11 @@ use solana_sdk::commitment_config::CommitmentConfig;
 
 #[tokio::main]
 async fn main() {
-    dotenv().expect("failt to load env");
-    let opt = ConnectOptions::new(std::env::var("DATABASE_URL").expect("missing DATABASE_URL env"));
+    dotenv().expect("fail to load env");
+    let mut opt =
+        ConnectOptions::new(std::env::var("DATABASE_URL").expect("missing DATABASE_URL env"));
+
+    opt.sqlx_logging(false);
 
     let ws_url = std::env::var("WS_URL").expect("missing WS_URL env");
 
@@ -30,10 +37,12 @@ async fn main() {
         .await
         .expect("fail to connect to datbase");
 
+    tracing_subscriber::fmt().init();
+
     loop {
         stream(&db, &ws_url)
             .await
-            .unwrap_or_else(|error| eprint!("stream error {:#?}", error));
+            .unwrap_or_else(|error| tracing::error!("stream error {:#?}", error));
     }
 }
 
@@ -43,12 +52,12 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClien
     let filter = RpcTransactionLogsFilter::Mentions(vec![PROGRAM_ID_STR.to_string()]);
 
     let config = RpcTransactionLogsConfig {
-        commitment: Some(CommitmentConfig::confirmed()),
+        commitment: Some(CommitmentConfig::finalized()),
     };
 
     let (mut notifications, _unsubscribe) = client.logs_subscribe(filter, config).await?;
 
-    println!("🦀 stream is running");
+    tracing::info!("🦀 stream is running");
 
     while let Some(response) = notifications.next().await {
         let signature = response.value.signature;
@@ -57,7 +66,7 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClien
         let snapshot = signature_snapshot::find_by_signature(db, &signature)
             .await
             .unwrap_or_else(|e| {
-                eprintln!("find snapshot failed {:#?}", e);
+                tracing::error!("find snapshot failed {:#?}", e);
                 None
             });
 
@@ -65,15 +74,37 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClien
             let logs = response.value.logs;
 
             if let Some(event) = parse_logs(logs) {
-                match event {
-                    Event::DeployEvent(event) => _on_deploy_event(db, event, &signature).await,
-                    Event::VoteEvent(event) => _on_vote_event(db, event, &signature).await,
-                    Event::FinishEvent(event) => _on_finish_event(db, event, &signature).await,
+                let db_event = native_enums::Event::from_ref(&event);
+
+                let result = match event {
+                    Event::DeployEvent(event) => _on_deploy_event(db, event).await,
+                    Event::VoteEvent(event) => _on_vote_event(db, event).await,
+                    Event::FinishEvent(event) => _on_finish_event(db, event).await,
+                    Event::CloseEvent(event) => _on_close_event(db, event).await,
+                    Event::ClaimRewards(event) => _on_claim_rewards(db, event).await,
+                    Event::Withdraw(event) => _on_withdraw(db, event).await,
+                };
+
+                match result {
+                    Ok(_) => {
+                        signature_snapshot::create(
+                            db,
+                            signature.clone(),
+                            db_event.clone(),
+                            Context::Stream,
+                        )
+                        .await
+                        .unwrap_or_else(|e| {
+                            tracing::error!("fail to create snapshot {:#?}", e);
+                        });
+
+                        tracing::info!("done {} >> {}", db_event, signature)
+                    }
+                    Err(error) => tracing::error!("error from {} listener {}", db_event, error),
                 }
-                .unwrap_or_else(|e| eprintln!("error from listener {:#?}", e));
             }
         } else {
-            println!("skip >> {}", signature);
+            tracing::info!("skip >> {}", signature);
         }
     }
 
