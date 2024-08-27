@@ -23,9 +23,10 @@ pub enum HttpException {
     #[status(StatusCode::BAD_REQUEST)]
     BodyRejectionError(#[from] axum::extract::rejection::JsonRejection),
 
-    // #[error("{0:#?}")]
-    // #[status(StatusCode::BAD_REQUEST)]
-    // BadRequest(String),
+    #[error("{0:#?}")]
+    #[status(StatusCode::BAD_REQUEST)]
+    BadRequest(String),
+
     #[error("{0:#?}")]
     #[status(StatusCode::UNAUTHORIZED)]
     Unauthorized(String),

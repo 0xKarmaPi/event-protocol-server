@@ -21,6 +21,7 @@ use chrono::{SecondsFormat, Utc};
   ),
   paths(
         get_events,
+        get_event,
         sign_in  
     ),
     components(

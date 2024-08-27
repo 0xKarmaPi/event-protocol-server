@@ -133,3 +133,10 @@ pub async fn find(
 
     Ok((events, total))
 }
+
+pub async fn find_by_id(
+    db: &DatabaseConnection,
+    id: &str,
+) -> Result<Option<prediction_event::Model>, DbErr> {
+    prediction_event::Entity::find_by_id(id).one(db).await
+}

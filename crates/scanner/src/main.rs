@@ -65,7 +65,7 @@ async fn main() {
             tracing::error!("fail to set lastest_scanned_signature {:#?}", error)
         });
 
-        tokio::time::sleep(Duration::from_millis(6000)).await;
+        tokio::time::sleep(Duration::from_millis(12_000)).await;
     }
 }
 
