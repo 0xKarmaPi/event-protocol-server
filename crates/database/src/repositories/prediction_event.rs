@@ -60,14 +60,14 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
     ticket::Entity::update_many()
         .col_expr(ticket::Column::Result, Expr::value(Rst::Won.as_enum()))
         .filter(ticket::Column::EventPubkey.eq(&event_key))
-        .filter(ticket::Column::Result.eq(result.clone()))
+        .filter(ticket::Column::Selection.eq(result.clone()))
         .exec(&tx)
         .await?;
 
     ticket::Entity::update_many()
         .col_expr(ticket::Column::Result, Expr::value(Rst::Lost.as_enum()))
         .filter(ticket::Column::EventPubkey.eq(&event_key))
-        .filter(ticket::Column::Result.ne(result))
+        .filter(ticket::Column::Selection.ne(result))
         .exec(&tx)
         .await?;
 
