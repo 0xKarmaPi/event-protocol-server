@@ -33,6 +33,7 @@ model ticket {
   amount       Decimal  @db.Decimal(80, 0)
   claimed      Boolean
   withdrawn    Boolean
+  result       rst      @default(lost)
   created_date DateTime @default(now()) @db.Timestamptz(3)
 }
 
@@ -65,4 +66,10 @@ enum event {
 enum context {
   stream
   scanner
+}
+
+enum rst {
+  pending
+  won
+  lost
 }

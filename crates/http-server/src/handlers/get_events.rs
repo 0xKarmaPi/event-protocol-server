@@ -4,9 +4,12 @@ use crate::{
     serialization::PaginatedData,
 };
 use axum::Json;
-use database::{models::PredictionEvent, repositories::prediction_event};
-use serde::Deserialize;
-use utoipa::IntoParams;
+use database::{
+    models::{PredictionEvent, Ticket},
+    repositories::prediction_event,
+};
+use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(Deserialize, IntoParams, Validate)]
@@ -20,6 +23,9 @@ pub struct GetEventsParams {
 
     #[validate(length(min = 1))]
     creator: Option<String>,
+
+    #[validate(length(min = 1))]
+    predictor: Option<String>,
 }
 
 #[utoipa::path(
@@ -30,7 +36,7 @@ pub struct GetEventsParams {
   path = "/api/events",
   tag = "Event",
   responses(
-      (status = 200, description = "return prediction event list", body = PaginatedEvents)
+      (status = 200, description = "return prediction event list", body = PaginatedEventsWithTickets)
   )
 )]
 pub async fn get_events(
@@ -39,9 +45,27 @@ pub async fn get_events(
         page,
         limit,
         creator,
+        predictor,
     }): ValidatedQuery<GetEventsParams>,
-) -> Result<Json<PaginatedData<PredictionEvent>>, HttpException> {
-    let (events, total) = prediction_event::find(&db, page, limit, creator).await?;
+) -> Result<Json<PaginatedData<PredictionEventWithTickets>>, HttpException> {
+    let (events, total, tickets) =
+        prediction_event::find(&db, creator, predictor, page, limit).await?;
+
+    let events = if let Some(tickes) = tickets {
+        events
+            .into_iter()
+            .zip(tickes)
+            .map(|(event, tickets)| PredictionEventWithTickets { event, tickets })
+            .collect()
+    } else {
+        events
+            .into_iter()
+            .map(|event| PredictionEventWithTickets {
+                event,
+                tickets: vec![],
+            })
+            .collect()
+    };
 
     let response = PaginatedData {
         page,
@@ -50,4 +74,11 @@ pub async fn get_events(
     };
 
     Ok(Json(response))
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct PredictionEventWithTickets {
+    #[serde(flatten)]
+    pub event: PredictionEvent,
+    pub tickets: Vec<Ticket>,
 }

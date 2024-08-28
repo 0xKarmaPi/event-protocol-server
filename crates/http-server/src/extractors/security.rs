@@ -14,7 +14,6 @@ pub struct Claims {
     pub exp: u64,
 }
 
-#[allow(dead_code)]
 pub struct Auth(pub Claims);
 
 #[async_trait]

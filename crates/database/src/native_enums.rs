@@ -40,6 +40,19 @@ pub enum Side {
     Right,
 }
 
+#[derive(
+    Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, ToSchema,
+)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "rst")]
+pub enum Rst {
+    #[sea_orm(string_value = "lost")]
+    Lost,
+    #[sea_orm(string_value = "pending")]
+    Pending,
+    #[sea_orm(string_value = "won")]
+    Won,
+}
+
 impl From<events::Side> for Side {
     fn from(side: events::Side) -> Self {
         match side {

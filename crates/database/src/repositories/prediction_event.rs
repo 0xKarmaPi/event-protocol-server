@@ -3,11 +3,17 @@ use program::{
     events::{DeployEvtEvent, FinishEvtEvent},
 };
 use sea_orm::{
-    prelude::DateTimeUtc, sea_query::Expr, ActiveEnum, ColumnTrait, DatabaseConnection, DbErr,
-    EntityTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set,
+    prelude::DateTimeUtc,
+    sea_query::{Expr, Query},
+    ActiveEnum, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, LoaderTrait, QueryFilter,
+    QueryOrder, QuerySelect, QueryTrait, Set, TransactionTrait,
 };
 
-use crate::{entities::prediction_event, models::Count, native_enums::Side};
+use crate::{
+    entities::{prediction_event, ticket},
+    models::{Count, Ticket},
+    native_enums::{Rst, Side},
+};
 
 pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<(), DbErr> {
     let start_date = DateTimeUtc::from_timestamp(event.start_date as i64, 0)
@@ -42,10 +48,27 @@ pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<()
 pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Result<(), DbErr> {
     let result: Side = event.result.into();
 
+    let tx = db.begin().await?;
+    let event_key = event.key.to_string();
+
     prediction_event::Entity::update_many()
         .col_expr(prediction_event::Column::Result, result.as_enum())
-        .filter(prediction_event::Column::Pubkey.eq(event.key.to_string()))
-        .exec(db)
+        .filter(prediction_event::Column::Pubkey.eq(&event_key))
+        .exec(&tx)
+        .await?;
+
+    ticket::Entity::update_many()
+        .col_expr(ticket::Column::Result, Expr::value(Rst::Won.as_enum()))
+        .filter(ticket::Column::EventPubkey.eq(&event_key))
+        .filter(ticket::Column::Result.eq(result.clone()))
+        .exec(&tx)
+        .await?;
+
+    ticket::Entity::update_many()
+        .col_expr(ticket::Column::Result, Expr::value(Rst::Lost.as_enum()))
+        .filter(ticket::Column::EventPubkey.eq(&event_key))
+        .filter(ticket::Column::Result.ne(result))
+        .exec(&tx)
         .await?;
 
     Ok(())
@@ -109,33 +132,58 @@ pub async fn create_from_account(
 
 pub async fn find(
     db: &DatabaseConnection,
+    creator: Option<String>,
+    predictor: Option<String>,
     page: u64,
     limit: u64,
-    creator: Option<String>,
-) -> Result<(Vec<prediction_event::Model>, i64), DbErr> {
-    let events = prediction_event::Entity::find()
+) -> Result<(Vec<prediction_event::Model>, i64, Option<Vec<Vec<Ticket>>>), DbErr> {
+    let query = prediction_event::Entity::find()
         .apply_if(creator.as_ref(), |query, creator| {
             query.filter(prediction_event::Column::Creator.eq(creator))
         })
+        .apply_if(predictor.as_ref(), |query, predictor| {
+            query.filter(
+                prediction_event::Column::Pubkey.in_subquery(
+                    Query::select()
+                        .column(ticket::Column::EventPubkey)
+                        .and_where(ticket::Column::Creator.eq(predictor))
+                        .from(ticket::Entity)
+                        .to_owned(),
+                ),
+            )
+        });
+
+    let events = query
+        .clone()
         .limit(limit)
         .offset((page - 1) * limit)
         .order_by_desc(prediction_event::Column::CreatedDate)
         .all(db)
         .await?;
 
-    let total = prediction_event::Entity::find()
+    let total = query
         .select_only()
         .column_as(prediction_event::Column::Id.count(), "count")
-        .apply_if(creator, |query, creator| {
-            query.filter(prediction_event::Column::Creator.eq(creator))
-        })
         .into_model::<Count>()
         .one(db)
         .await?
         .unwrap_or_default()
         .count;
 
-    Ok((events, total))
+    let mut tickets = None;
+
+    if let Some(predictor) = predictor {
+        tickets = Some(
+            events
+                .load_many(
+                    ticket::Entity::find().filter(ticket::Column::Creator.eq(predictor)),
+                    db,
+                )
+                .await?,
+        );
+    }
+
+    Ok((events, total, tickets))
 }
 
 pub async fn find_by_id(
@@ -143,4 +191,21 @@ pub async fn find_by_id(
     id: &str,
 ) -> Result<Option<prediction_event::Model>, DbErr> {
     prediction_event::Entity::find_by_id(id).one(db).await
+}
+
+pub async fn count_total_created_by_pubkey(
+    db: &DatabaseConnection,
+    pubkey: &str,
+) -> Result<i64, DbErr> {
+    let total = prediction_event::Entity::find()
+        .select_only()
+        .column_as(prediction_event::Column::Id.count(), "count")
+        .filter(prediction_event::Column::Creator.eq(pubkey))
+        .into_model::<Count>()
+        .one(db)
+        .await?
+        .map(|record| record.count)
+        .unwrap_or_default();
+
+    Ok(total)
 }

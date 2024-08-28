@@ -36,6 +36,7 @@ async fn main() {
         .route("/api/events", get(get_events))
         .route("/api/events/:id", get(get_event))
         .route("/api/sign-in", post(sign_in))
+        .route("/api/statistics", get(get_user_statistics))
         .layer(CorsLayer::permissive())
         .with_state(app_state);
 

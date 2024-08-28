@@ -1,9 +1,9 @@
-use database::models::PredictionEvent;
+use crate::handlers::PredictionEventWithTickets;
 use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Serialize, ToSchema)]
-#[aliases(PaginatedEvents = PaginatedData<PredictionEvent>)]
+#[aliases(PaginatedEventsWithTickets = PaginatedData<PredictionEventWithTickets>)]
 pub struct PaginatedData<T> {
     pub page: u64,
     pub total: i64,

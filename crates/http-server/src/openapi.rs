@@ -1,5 +1,5 @@
 
-use database::{native_enums::Side,models::*};
+use database::{native_enums::*,models::*};
 use utoipa::{
     openapi::{
         self,
@@ -22,21 +22,31 @@ use chrono::{SecondsFormat, Utc};
   paths(
         get_events,
         get_event,
+        get_user_statistics,
         sign_in  
     ),
     components(
       schemas(
         // query
+
         // body
         SignInPayload,
+
         // responses
-        PaginatedEvents,
+        PredictionEventWithTickets,
+        PaginatedEventsWithTickets,
         PredictionEvent,
+        Ticket,
         Token,
+        UserStatistics,
+
         // custom types
         DateTimeWithTimeZone,
+        Decimal,
+
         // enums
-        Side
+        Side,
+        Rst,
 
       ),
       responses()
@@ -64,6 +74,7 @@ impl Modify for BearerSecurity {
 }
 
 struct DateTimeWithTimeZone;
+struct Decimal;
 
 impl<'__s> ToSchema<'__s> for DateTimeWithTimeZone {
     fn schema() -> (&'__s str, openapi::RefOr<openapi::schema::Schema>) {
@@ -77,6 +88,19 @@ impl<'__s> ToSchema<'__s> for DateTimeWithTimeZone {
                         .to_rfc3339_opts(SecondsFormat::Millis, true)
                         .into(),
                 ))
+                .into(),
+        )
+    }
+}
+
+impl<'__s> ToSchema<'__s> for Decimal {
+    fn schema() -> (&'__s str, openapi::RefOr<openapi::schema::Schema>) {
+        (
+            "Decimal",
+            openapi::ObjectBuilder::new()
+                .schema_type(SchemaType::String)
+                .description(Some("Decimal value"))
+                .default(Some(serde_json::Value::String("9000.00".to_string())))
                 .into(),
         )
     }
