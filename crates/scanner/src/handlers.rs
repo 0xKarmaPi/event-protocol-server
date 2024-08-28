@@ -18,6 +18,7 @@ pub async fn process_deploy_event(
     db: &DatabaseConnection,
     client: &RpcClient,
     event: DeployEvtEvent,
+    block_time: i64,
 ) -> Result<(), ScannerError> {
     match program::deserialize_account::<PredictionEvent>(client, &event.key).await {
         Err(error) => {
@@ -28,7 +29,7 @@ pub async fn process_deploy_event(
             }
         }
         Ok(prediction_event) => {
-            prediction_event::create_from_account(db, event, prediction_event).await?;
+            prediction_event::create_from_account(db, event, prediction_event, block_time).await?;
             Ok(())
         }
     }
@@ -38,9 +39,10 @@ pub async fn process_vote_event(
     db: &DatabaseConnection,
     client: &RpcClient,
     event: VoteEvtEvent,
+    block_time: i64,
 ) -> Result<(), ScannerError> {
     let account = program::deserialize_account(client, &event.ticket_key).await?;
-    ticket::create_or_update_amount_from_account(db, event, account).await?;
+    ticket::create_or_update_amount_from_account(db, event, account, block_time).await?;
 
     Ok(())
 }

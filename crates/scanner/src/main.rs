@@ -111,10 +111,17 @@ async fn scan(
 
             if let Some(event) = event {
                 let db_event = native_enums::Event::from_ref(&event);
+                let block_time = tx
+                    .block_time
+                    .unwrap_or(client.get_block_time(tx.slot).await?);
 
                 match event {
-                    Event::DeployEvent(event) => process_deploy_event(db, client, event).await?,
-                    Event::VoteEvent(event) => process_vote_event(db, client, event).await?,
+                    Event::DeployEvent(event) => {
+                        process_deploy_event(db, client, event, block_time).await?
+                    }
+                    Event::VoteEvent(event) => {
+                        process_vote_event(db, client, event, block_time).await?
+                    }
                     Event::FinishEvent(event) => process_finish_event(db, event).await?,
                     Event::ClaimRewards(event) => process_claim_reward(db, event).await?,
                     Event::CloseEvent(event) => process_close_event(db, event).await?,

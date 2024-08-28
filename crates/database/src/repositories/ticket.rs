@@ -1,7 +1,7 @@
 use program::{accounts::Ticket, events::VoteEvtEvent};
 use sea_orm::{
-    sea_query::Expr, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel,
-    QueryFilter, Set,
+    prelude::DateTimeUtc, sea_query::Expr, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
+    IntoActiveModel, QueryFilter, Set,
 };
 
 use crate::entities::ticket;
@@ -62,6 +62,7 @@ pub async fn create_or_update_amount_from_account(
     db: &DatabaseConnection,
     event: VoteEvtEvent,
     account: Ticket,
+    block_time: i64,
 ) -> Result<(), DbErr> {
     let ticket = ticket::Entity::find_by_id(event.ticket_key.to_string())
         .one(db)
@@ -74,6 +75,9 @@ pub async fn create_or_update_amount_from_account(
 
         ticket::Entity::update(model).exec(db).await?;
     } else {
+        let created_date = DateTimeUtc::from_timestamp(block_time, 0)
+            .ok_or(DbErr::Custom("invalid date block_time".to_string()))?;
+
         let model = ticket::ActiveModel {
             pubkey: Set(event.ticket_key.to_string()),
             event_pubkey: Set(event.event_key.to_string()),
@@ -83,7 +87,7 @@ pub async fn create_or_update_amount_from_account(
             selection: Set(account.selection.into()),
             claimed: Set(account.claimed),
             withdrawn: Set(account.withdrawn),
-            created_date: Default::default(),
+            created_date: Set(created_date.into()),
         };
 
         ticket::Entity::insert(model).exec(db).await?;

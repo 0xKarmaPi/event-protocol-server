@@ -17,7 +17,7 @@ pub struct GetEventPathParam {
 
 #[utoipa::path(
   get,
-  path = "/api/event/{id}",
+  path = "/api/events/{id}",
   params(GetEventPathParam),
   tag = "Event",
   responses(

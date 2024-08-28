@@ -65,6 +65,7 @@ pub async fn create_from_account(
     db: &DatabaseConnection,
     event: DeployEvtEvent,
     account: PredictionEvent,
+    block_time: i64,
 ) -> Result<(), DbErr> {
     let record = prediction_event::Entity::find_by_id(account.id.to_string())
         .one(db)
@@ -75,6 +76,9 @@ pub async fn create_from_account(
 
     let end_date = DateTimeUtc::from_timestamp(account.end_date as i64, 0)
         .ok_or(DbErr::Custom("invalid date end_date".to_string()))?;
+
+    let created_date = DateTimeUtc::from_timestamp(block_time, 0)
+        .ok_or(DbErr::Custom("invalid date block_time".to_string()))?;
 
     if record.is_none() {
         let model = prediction_event::ActiveModel {
@@ -93,7 +97,7 @@ pub async fn create_from_account(
             creator: Set(account.creator.to_string()),
             burning: Set(account.burning),
             result: Set(account.result.map(Into::into)),
-            created_date: Default::default(),
+            created_date: Set(created_date.into()),
             deleted: Default::default(),
         };
 
