@@ -7,7 +7,7 @@ use database::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
 use dotenv::dotenv;
-use futures::StreamExt;
+use futures::{future::BoxFuture, StreamExt};
 use listeners::{
     _on_claim_rewards, _on_close_event, _on_deploy_event, _on_finish_event, _on_vote_event,
     _on_withdraw,
@@ -40,13 +40,20 @@ async fn main() {
     tracing_subscriber::fmt().init();
 
     loop {
-        stream(&db, &ws_url)
-            .await
-            .unwrap_or_else(|error| tracing::error!("stream error {:#?}", error));
+        match stream(&db, &ws_url).await {
+            Ok(unsubscribe_fn) => {
+                tracing::info!("unsubscribe");
+                unsubscribe_fn().await;
+            }
+            Err(err) => {
+                tracing::error!("stream error {:#?}", err);
+            }
+        }
     }
 }
+type UnsubscribeFn = Box<dyn FnOnce() -> BoxFuture<'static, ()> + Send>;
 
-async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClientError> {
+async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<UnsubscribeFn, PubsubClientError> {
     let client = PubsubClient::new(ws_url).await?;
 
     let filter = RpcTransactionLogsFilter::Mentions(vec![PROGRAM_ID_STR.to_string()]);
@@ -55,7 +62,7 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClien
         commitment: Some(CommitmentConfig::finalized()),
     };
 
-    let (mut notifications, _unsubscribe) = client.logs_subscribe(filter, config).await?;
+    let (mut notifications, unsubscribe) = client.logs_subscribe(filter, config).await?;
 
     tracing::info!("🦀 stream is running");
 
@@ -108,5 +115,5 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<(), PubsubClien
         }
     }
 
-    Ok(())
+    Ok(unsubscribe)
 }
