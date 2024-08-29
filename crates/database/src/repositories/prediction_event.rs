@@ -71,6 +71,8 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
         .exec(&tx)
         .await?;
 
+    tx.commit().await?;
+
     Ok(())
 }
 
