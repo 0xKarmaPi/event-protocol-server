@@ -69,6 +69,10 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<UnsubscribeFn, 
     while let Some(response) = notifications.next().await {
         let signature = response.value.signature;
 
+        if signature == "1111111111111111111111111111111111111111111111111111111111111111" {
+            continue;
+        }
+
         // sometime the websocket sends logs duplicate, skip if resolved
         let snapshot = signature_snapshot::find_by_signature(db, &signature)
             .await
