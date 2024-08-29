@@ -33,7 +33,7 @@ model ticket {
   amount       Decimal  @db.Decimal(80, 0)
   claimed      Boolean
   withdrawn    Boolean
-  result       rst      @default(lost)
+  result       rst      @default(pending)
   created_date DateTime @default(now()) @db.Timestamptz(3)
 }
 
