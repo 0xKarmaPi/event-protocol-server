@@ -43,7 +43,7 @@ pub async fn _on_close_event(
 ) -> Result<(), StreamError> {
     tracing::info!("close event: {:#?}", event);
 
-    prediction_event::close(db, &event.key.to_string()).await?;
+    prediction_event::delete(db, &event.key.to_string()).await?;
     Ok(())
 }
 

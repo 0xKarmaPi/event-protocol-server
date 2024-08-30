@@ -8,21 +8,22 @@ model user {
 }
 
 model prediction_event {
-  id                String   @id @db.VarChar(44)
-  pubkey            String   @unique @db.VarChar(44)
-  creator           String   @db.VarChar(44)
-  title             String   @db.VarChar(50)
-  description       String   @db.VarChar(144)
-  left_description  String   @db.VarChar(144)
-  right_description String   @db.VarChar(144)
-  left_mint         String?  @db.VarChar(44)
-  right_mint        String?  @db.VarChar(44)
-  start_date        DateTime @db.Timestamptz(3)
-  end_date          DateTime @db.Timestamptz(3)
-  burning           Boolean
-  result            side?
-  deleted           Boolean  @default(false)
-  created_date      DateTime @default(now()) @db.Timestamptz(3)
+  id                  String   @id @db.VarChar(44)
+  pubkey              String   @unique @db.VarChar(44)
+  creator             String   @db.VarChar(44)
+  title               String   @db.VarChar(50)
+  description         String   @db.VarChar(144)
+  left_description    String   @db.VarChar(144)
+  right_description   String   @db.VarChar(144)
+  left_mint           String?  @db.VarChar(44)
+  right_mint          String?  @db.VarChar(44)
+  left_mint_decimals  Int?
+  right_mint_decimals Int?
+  start_date          DateTime @db.Timestamptz(3)
+  end_date            DateTime @db.Timestamptz(3)
+  burning             Boolean
+  result              side?
+  created_date        DateTime @default(now()) @db.Timestamptz(3)
 }
 
 model ticket {

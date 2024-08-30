@@ -25,9 +25,11 @@ pub struct Model {
     pub burning: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<Side>,
-    #[serde(skip)]
-    pub deleted: bool,
     pub created_date: DateTimeWithTimeZone,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub left_mint_decimals: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub right_mint_decimals: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

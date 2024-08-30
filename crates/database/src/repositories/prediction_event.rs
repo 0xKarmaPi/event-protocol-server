@@ -37,7 +37,8 @@ pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<()
         burning: Set(event.burning),
         result: Set(None),
         created_date: Default::default(),
-        deleted: Default::default(),
+        left_mint_decimals: Set(event.left_mint_decimals.map(i32::from)),
+        right_mint_decimals: Set(event.right_mint_decimals.map(i32::from)),
     };
 
     prediction_event::Entity::insert(model).exec(db).await?;
@@ -76,9 +77,8 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
     Ok(())
 }
 
-pub async fn close(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> {
-    prediction_event::Entity::update_many()
-        .col_expr(prediction_event::Column::Deleted, Expr::value(true))
+pub async fn delete(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> {
+    prediction_event::Entity::delete_many()
         .filter(prediction_event::Column::Pubkey.eq(pubkey))
         .exec(db)
         .await?;
@@ -123,7 +123,8 @@ pub async fn create_from_account(
             burning: Set(account.burning),
             result: Set(account.result.map(Into::into)),
             created_date: Set(created_date.into()),
-            deleted: Default::default(),
+            left_mint_decimals: Set(event.left_mint_decimals.map(i32::from)),
+            right_mint_decimals: Set(event.right_mint_decimals.map(i32::from)),
         };
 
         prediction_event::Entity::insert(model).exec(db).await?;

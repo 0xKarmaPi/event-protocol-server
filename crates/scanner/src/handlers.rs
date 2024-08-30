@@ -59,7 +59,7 @@ pub async fn process_close_event(
     db: &DatabaseConnection,
     event: CloseEvtEvent,
 ) -> Result<(), ScannerError> {
-    prediction_event::close(db, &event.key.to_string()).await?;
+    prediction_event::delete(db, &event.key.to_string()).await?;
     Ok(())
 }
 
