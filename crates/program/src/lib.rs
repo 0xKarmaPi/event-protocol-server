@@ -8,7 +8,7 @@ use error::ProgramError;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
-pub const PROGRAM_ID_STR: &str = "DkrbiiPVcc1enxhZKo3Vf3jcmt15EkNBauC7rY8EeFyq";
+pub const PROGRAM_ID_STR: &str = "9CVFRbxzS1FyVdnGwXYS6HpTvSasaEva8pjtVKtFjvsj";
 
 pub async fn deserialize_account<T: BorshDeserialize>(
     client: &RpcClient,
