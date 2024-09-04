@@ -96,43 +96,54 @@ async fn scan(
             .is_some();
 
         if is_resolved {
-            tracing::info!("skip >> {}", sig)
-        } else {
-            let tx = client
-                .get_transaction(&Signature::from_str(&sig)?, UiTransactionEncoding::Base58)
-                .await?;
-
-            let event = tx
-                .transaction
-                .meta
-                .map(|meta| meta.log_messages)
-                .and_then(Option::from)
-                .and_then(parse_logs);
-
-            if let Some(event) = event {
-                let db_event = native_enums::Event::from_ref(&event);
-                let block_time = tx
-                    .block_time
-                    .unwrap_or(client.get_block_time(tx.slot).await?);
-
-                match event {
-                    Event::DeployEvent(event) => {
-                        process_deploy_event(db, client, event, block_time).await?
-                    }
-                    Event::VoteEvent(event) => {
-                        process_vote_event(db, client, event, block_time).await?
-                    }
-                    Event::FinishEvent(event) => process_finish_event(db, event).await?,
-                    Event::ClaimRewards(event) => process_claim_reward(db, event).await?,
-                    Event::CloseEvent(event) => process_close_event(db, event).await?,
-                    Event::Withdraw(event) => process_withdraw(db, event).await?,
-                };
-
-                signature_snapshot::create(db, sig.clone(), db_event, Context::Scanner).await?;
-            }
-
-            tracing::info!("resolve missing signature >> {}", sig);
+            tracing::info!("skip >> {}", sig);
+            continue;
         }
+
+        let tx = client
+            .get_transaction(&Signature::from_str(&sig)?, UiTransactionEncoding::Base58)
+            .await?;
+
+        if tx
+            .transaction
+            .meta
+            .as_ref()
+            .is_some_and(|meta| meta.err.is_some())
+        {
+            tracing::info!("skip failed signature {}", sig);
+            continue;
+        }
+
+        let event = tx
+            .transaction
+            .meta
+            .map(|meta| meta.log_messages)
+            .and_then(Option::from)
+            .and_then(parse_logs);
+
+        if let Some(event) = event {
+            let db_event = native_enums::Event::from_ref(&event);
+            let block_time = tx
+                .block_time
+                .unwrap_or(client.get_block_time(tx.slot).await?);
+
+            match event {
+                Event::DeployEvent(event) => {
+                    process_deploy_event(db, client, event, block_time).await?
+                }
+                Event::VoteEvent(event) => {
+                    process_vote_event(db, client, event, block_time).await?
+                }
+                Event::FinishEvent(event) => process_finish_event(db, event).await?,
+                Event::ClaimRewards(event) => process_claim_reward(db, event).await?,
+                Event::CloseEvent(event) => process_close_event(db, event).await?,
+                Event::Withdraw(event) => process_withdraw(db, event).await?,
+            };
+
+            signature_snapshot::create(db, sig.clone(), db_event, Context::Scanner).await?;
+        }
+
+        tracing::info!("resolve missing signature >> {}", sig);
 
         *signture_cursor = sig;
     }

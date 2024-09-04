@@ -73,6 +73,11 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<UnsubscribeFn, 
             continue;
         }
 
+        if response.value.err.is_some() {
+            tracing::info!("skip failed signature {}", signature);
+            continue;
+        }
+
         // sometime the websocket sends logs duplicate, skip if resolved
         let snapshot = signature_snapshot::find_by_signature(db, &signature)
             .await
