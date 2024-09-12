@@ -4,7 +4,8 @@ use crate::entities::setting;
 
 #[derive(Clone, Copy)]
 pub enum Setting {
-    LastestScannedSignature,
+    LastestScannedSolanaSignature,
+    LastestScannedSonicSignature,
 }
 
 pub async fn get(db: &DatabaseConnection, key: Setting) -> Result<Option<String>, DbErr> {
@@ -27,9 +28,10 @@ pub async fn set(db: &DatabaseConnection, key: Setting, value: String) -> Result
 }
 
 impl Setting {
-    fn to_str_key(self) -> String {
+    fn to_str_key(self) -> &'static str {
         match self {
-            Self::LastestScannedSignature => "lastest_scanned_signature".to_string(),
+            Self::LastestScannedSolanaSignature => "solana_lastest_scanned_signature",
+            Self::LastestScannedSonicSignature => "sonic_lastest_scanned_signature",
         }
     }
 }

@@ -29,9 +29,15 @@ use std::{str::FromStr, time::Duration};
 pub async fn scan(network: Network) {
     dotenv().expect("fail to load env");
 
-    let rpc_url = match network {
-        Network::Solana => std::env::var("SOLANA_RPC_URL").expect("missing SOLANA_RPC_URL env"),
-        Network::Sonic => std::env::var("SONIC_RPC_URL").expect("missing SONIC_RPC_URL env"),
+    let (rpc_url, key) = match network {
+        Network::Solana => (
+            std::env::var("SOLANA_RPC_URL").expect("missing SOLANA_RPC_URL env"),
+            Setting::LastestScannedSolanaSignature,
+        ),
+        Network::Sonic => (
+            std::env::var("SONIC_RPC_URL").expect("missing SONIC_RPC_URL env"),
+            Setting::LastestScannedSonicSignature,
+        ),
     };
 
     let client = RpcClient::new(rpc_url);
@@ -49,7 +55,7 @@ pub async fn scan(network: Network) {
 
     tracing_subscriber::fmt().init();
 
-    let mut lastest_signature = setting::get(&db, Setting::LastestScannedSignature)
+    let mut lastest_signature = setting::get(&db, key)
         .await
         .expect("fail to get lastest_scanned_signature setting")
         .expect("lastest_scanned_signature setting not found");
@@ -65,15 +71,11 @@ pub async fn scan(network: Network) {
         .await
         .unwrap_or_else(|error| tracing::error!("{}", error));
 
-        setting::set(
-            &db,
-            Setting::LastestScannedSignature,
-            lastest_signature.clone(),
-        )
-        .await
-        .unwrap_or_else(|error| {
-            tracing::error!("fail to set lastest_scanned_signature {:#?}", error)
-        });
+        setting::set(&db, key, lastest_signature.clone())
+            .await
+            .unwrap_or_else(|error| {
+                tracing::error!("fail to set lastest_scanned_signature {:#?}", error)
+            });
 
         tokio::time::sleep(Duration::from_millis(12_000)).await;
     }
