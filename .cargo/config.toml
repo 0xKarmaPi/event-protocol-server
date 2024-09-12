@@ -1,4 +1,8 @@
 [alias]
 serve = "run -p http-server --release"
-listen = "run -p stream --release"
-scan = "run -p scanner --release"
+
+sonic-listen = "run -p stream --bin sonic-stream --release"
+solana-listen = "run -p stream --bin solana-stream --release"
+
+sonic-scan = "run -p scanner --bin sonic-scanner --release"
+solana-scan = "run -p scanner --bin solana-scanner --release"

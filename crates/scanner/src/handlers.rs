@@ -1,4 +1,5 @@
 use database::{
+    native_enums::Network,
     repositories::{prediction_event, ticket},
     sea_orm::DatabaseConnection,
 };
@@ -16,6 +17,7 @@ use crate::error::ScannerError;
 
 pub async fn process_deploy_event(
     db: &DatabaseConnection,
+    network: Network,
     client: &RpcClient,
     event: DeployEvtEvent,
     block_time: i64,
@@ -29,7 +31,8 @@ pub async fn process_deploy_event(
             }
         }
         Ok(prediction_event) => {
-            prediction_event::create_from_account(db, event, prediction_event, block_time).await?;
+            prediction_event::create_from_account(db, network, event, prediction_event, block_time)
+                .await?;
             Ok(())
         }
     }
@@ -37,44 +40,49 @@ pub async fn process_deploy_event(
 
 pub async fn process_vote_event(
     db: &DatabaseConnection,
+    network: Network,
     client: &RpcClient,
     event: VoteEvtEvent,
     block_time: i64,
 ) -> Result<(), ScannerError> {
     let account = program::deserialize_account(client, &event.ticket_key).await?;
-    ticket::create_or_update_amount_from_account(db, event, account, block_time).await?;
+    ticket::create_or_update_amount_from_account(db, network, event, account, block_time).await?;
 
     Ok(())
 }
 
 pub async fn process_finish_event(
     db: &DatabaseConnection,
+    network: Network,
     event: FinishEvtEvent,
 ) -> Result<(), ScannerError> {
-    prediction_event::set_result(db, event).await?;
+    prediction_event::set_result(db, network, event).await?;
     Ok(())
 }
 
 pub async fn process_close_event(
     db: &DatabaseConnection,
+    network: Network,
     event: CloseEvtEvent,
 ) -> Result<(), ScannerError> {
-    prediction_event::delete(db, &event.key.to_string()).await?;
+    prediction_event::delete(db, network, &event.key.to_string()).await?;
     Ok(())
 }
 
 pub async fn process_claim_reward(
     db: &DatabaseConnection,
+    network: Network,
     event: ClaimRewardsEvent,
 ) -> Result<(), ScannerError> {
-    ticket::set_claimed_by_pubkey(db, &event.ticket_key.to_string()).await?;
+    ticket::set_claimed_by_pubkey(db, network, &event.ticket_key.to_string()).await?;
     Ok(())
 }
 
 pub async fn process_withdraw(
     db: &DatabaseConnection,
+    network: Network,
     event: WithdrawEvent,
 ) -> Result<(), ScannerError> {
-    ticket::set_withdrawn_by_pubkey(db, &event.ticket_key.to_string()).await?;
+    ticket::set_withdrawn_by_pubkey(db, network, &event.ticket_key.to_string()).await?;
     Ok(())
 }

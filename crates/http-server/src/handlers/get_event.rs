@@ -3,7 +3,7 @@ use crate::{
     extractors::{state::Db, validation::ValidatedPath},
 };
 use axum::Json;
-use database::{models::PredictionEvent, repositories::prediction_event};
+use database::{models::PredictionEvent, native_enums::Network, repositories::prediction_event};
 use serde::Deserialize;
 use utoipa::IntoParams;
 use validator::Validate;
@@ -12,12 +12,14 @@ use validator::Validate;
 #[into_params(parameter_in = Path)]
 pub struct GetEventPathParam {
     #[validate(length(min = 1))]
-    pub id: String,
+    id: String,
+
+    network: Network,
 }
 
 #[utoipa::path(
   get,
-  path = "/api/events/{id}",
+  path = "/api/events/{network}/{id}",
   params(GetEventPathParam),
   tag = "Event",
   responses(
@@ -26,12 +28,12 @@ pub struct GetEventPathParam {
 )]
 pub async fn get_event(
     Db(db): Db,
-    ValidatedPath(GetEventPathParam { id }): ValidatedPath<GetEventPathParam>,
+    ValidatedPath(GetEventPathParam { id, network }): ValidatedPath<GetEventPathParam>,
 ) -> Result<Json<PredictionEvent>, HttpException> {
-    prediction_event::find_by_id(&db, &id)
+    prediction_event::find_by_id(&db, network, id.clone())
         .await?
         .ok_or(HttpException::BadRequest(format!(
-            "event not found id: {}",
+            "event not found with id: {}",
             id
         )))
         .map(Json)

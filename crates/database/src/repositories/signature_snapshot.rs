@@ -2,11 +2,12 @@ use sea_orm::{DatabaseConnection, DbErr, EntityTrait, Set};
 
 use crate::{
     entities::signature_snapshot,
-    native_enums::{Context, Event},
+    native_enums::{Context, Event, Network},
 };
 
 pub async fn create(
     db: &DatabaseConnection,
+    network: Network,
     signature: String,
     event: Event,
     context: Context,
@@ -16,6 +17,7 @@ pub async fn create(
         event: Set(event),
         context: Set(context),
         created_date: Default::default(),
+        network: Set(network),
     })
     .exec(db)
     .await?;
@@ -25,9 +27,10 @@ pub async fn create(
 
 pub async fn find_by_signature(
     db: &DatabaseConnection,
-    signature: &str,
+    network: Network,
+    signature: String,
 ) -> Result<Option<signature_snapshot::Model>, DbErr> {
-    signature_snapshot::Entity::find_by_id(signature)
+    signature_snapshot::Entity::find_by_id((signature, network))
         .one(db)
         .await
 }

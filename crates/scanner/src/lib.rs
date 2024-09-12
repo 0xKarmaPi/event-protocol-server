@@ -2,7 +2,7 @@ mod error;
 mod handlers;
 
 use database::{
-    native_enums::{self, Context},
+    native_enums::{self, Context, Network},
     repositories::{
         setting::{self, Setting},
         signature_snapshot,
@@ -26,11 +26,15 @@ use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signature:
 use solana_transaction_status::UiTransactionEncoding;
 use std::{str::FromStr, time::Duration};
 
-#[tokio::main]
-async fn main() {
+pub async fn scan(network: Network) {
     dotenv().expect("fail to load env");
 
-    let client = RpcClient::new("https://api.devnet.solana.com".to_string());
+    let rpc_url = match network {
+        Network::Solana => std::env::var("SOLANA_RPC_URL").expect("missing SOLANA_RPC_URL env"),
+        Network::Sonic => std::env::var("SONIC_RPC_URL").expect("missing SONIC_RPC_URL env"),
+    };
+
+    let client = RpcClient::new(rpc_url);
 
     let program_id = Pubkey::from_str(PROGRAM_ID_STR).expect("invalid program id");
 
@@ -51,9 +55,15 @@ async fn main() {
         .expect("lastest_scanned_signature setting not found");
 
     loop {
-        scan(&db, &client, &program_id, &mut lastest_signature)
-            .await
-            .unwrap_or_else(|error| tracing::error!("{}", error));
+        process(
+            &db,
+            Network::Solana,
+            &client,
+            &program_id,
+            &mut lastest_signature,
+        )
+        .await
+        .unwrap_or_else(|error| tracing::error!("{}", error));
 
         setting::set(
             &db,
@@ -69,8 +79,9 @@ async fn main() {
     }
 }
 
-async fn scan(
+async fn process(
     db: &DatabaseConnection,
+    network: Network,
     client: &RpcClient,
     program_id: &Pubkey,
     signture_cursor: &mut String,
@@ -91,7 +102,7 @@ async fn scan(
         .collect();
 
     for sig in signatures {
-        let is_resolved = signature_snapshot::find_by_signature(db, &sig)
+        let is_resolved = signature_snapshot::find_by_signature(db, network, sig.clone())
             .await?
             .is_some();
 
@@ -129,18 +140,19 @@ async fn scan(
 
             match event {
                 Event::DeployEvent(event) => {
-                    process_deploy_event(db, client, event, block_time).await?
+                    process_deploy_event(db, network, client, event, block_time).await?
                 }
                 Event::VoteEvent(event) => {
-                    process_vote_event(db, client, event, block_time).await?
+                    process_vote_event(db, network, client, event, block_time).await?
                 }
-                Event::FinishEvent(event) => process_finish_event(db, event).await?,
-                Event::ClaimRewards(event) => process_claim_reward(db, event).await?,
-                Event::CloseEvent(event) => process_close_event(db, event).await?,
-                Event::Withdraw(event) => process_withdraw(db, event).await?,
+                Event::FinishEvent(event) => process_finish_event(db, network, event).await?,
+                Event::ClaimRewards(event) => process_claim_reward(db, network, event).await?,
+                Event::CloseEvent(event) => process_close_event(db, network, event).await?,
+                Event::Withdraw(event) => process_withdraw(db, network, event).await?,
             };
 
-            signature_snapshot::create(db, sig.clone(), db_event, Context::Scanner).await?;
+            signature_snapshot::create(db, network, sig.clone(), db_event, Context::Scanner)
+                .await?;
         }
 
         tracing::info!("resolve missing signature >> {}", sig);
