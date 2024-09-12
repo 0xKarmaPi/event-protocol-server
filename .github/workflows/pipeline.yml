@@ -28,7 +28,13 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.KEY }}
-          source: "target/release/http-server,target/release/stream,target/release/scanner"
+          source: "
+            target/release/http-server,
+            target/release/sonic-stream,
+            target/release/solana-stream,
+            target/release/sonic-scanner
+            target/release/solana-scanner
+            "
           target: ~/prediction-event
           strip_components: 2
 

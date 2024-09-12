@@ -4,13 +4,18 @@ use sea_orm::{
     IntoActiveModel, QueryFilter, QuerySelect, Set,
 };
 
-use crate::{entities::ticket, models::Count, native_enums::Rst};
+use crate::{
+    entities::ticket,
+    models::Count,
+    native_enums::{Network, Rst},
+};
 
 pub async fn create_or_update_amount(
     db: &DatabaseConnection,
+    network: Network,
     event: VoteEvtEvent,
 ) -> Result<(), DbErr> {
-    let ticket = ticket::Entity::find_by_id(event.ticket_key.to_string())
+    let ticket = ticket::Entity::find_by_id((event.ticket_key.to_string(), network))
         .one(db)
         .await?;
 
@@ -31,6 +36,7 @@ pub async fn create_or_update_amount(
             withdrawn: Set(false),
             created_date: Default::default(),
             result: Default::default(),
+            network: Set(network),
         };
 
         ticket::Entity::insert(model).exec(db).await?;
@@ -39,20 +45,30 @@ pub async fn create_or_update_amount(
     Ok(())
 }
 
-pub async fn set_claimed_by_pubkey(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> {
+pub async fn set_claimed_by_pubkey(
+    db: &DatabaseConnection,
+    network: Network,
+    pubkey: &str,
+) -> Result<(), DbErr> {
     ticket::Entity::update_many()
         .col_expr(ticket::Column::Claimed, Expr::value(true))
         .filter(ticket::Column::Pubkey.eq(pubkey))
+        .filter(ticket::Column::Network.eq(network))
         .exec(db)
         .await?;
 
     Ok(())
 }
 
-pub async fn set_withdrawn_by_pubkey(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> {
+pub async fn set_withdrawn_by_pubkey(
+    db: &DatabaseConnection,
+    network: Network,
+    pubkey: &str,
+) -> Result<(), DbErr> {
     ticket::Entity::update_many()
         .col_expr(ticket::Column::Withdrawn, Expr::value(true))
         .filter(ticket::Column::Pubkey.eq(pubkey))
+        .filter(ticket::Column::Network.eq(network))
         .exec(db)
         .await?;
 
@@ -61,11 +77,12 @@ pub async fn set_withdrawn_by_pubkey(db: &DatabaseConnection, pubkey: &str) -> R
 
 pub async fn create_or_update_amount_from_account(
     db: &DatabaseConnection,
+    network: Network,
     event: VoteEvtEvent,
     account: Ticket,
     block_time: i64,
 ) -> Result<(), DbErr> {
-    let ticket = ticket::Entity::find_by_id(event.ticket_key.to_string())
+    let ticket = ticket::Entity::find_by_id((event.ticket_key.to_string(), network))
         .one(db)
         .await?;
 
@@ -90,6 +107,7 @@ pub async fn create_or_update_amount_from_account(
             withdrawn: Set(account.withdrawn),
             created_date: Set(created_date.into()),
             result: Default::default(),
+            network: Set(network),
         };
 
         ticket::Entity::insert(model).exec(db).await?;

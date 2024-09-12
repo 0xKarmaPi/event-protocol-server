@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::native_enums::{Rst, Side};
+use crate::native_enums::{Network, Rst, Side};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, ToSchema)]
 #[sea_orm(table_name = "ticket")]
@@ -17,8 +17,10 @@ pub struct Model {
     pub amount: Decimal,
     pub claimed: bool,
     pub withdrawn: bool,
-    pub created_date: DateTimeWithTimeZone,
     pub result: Rst,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub network: Network,
+    pub created_date: DateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

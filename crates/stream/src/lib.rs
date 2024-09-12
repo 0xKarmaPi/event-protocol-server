@@ -2,7 +2,7 @@ mod error;
 mod listeners;
 
 use database::{
-    native_enums::{self, Context},
+    native_enums::{self, Context, Network},
     repositories::signature_snapshot,
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
@@ -23,15 +23,18 @@ use solana_client::{
 };
 use solana_sdk::commitment_config::CommitmentConfig;
 
-#[tokio::main]
-async fn main() {
+pub async fn stream(network: Network) {
     dotenv().expect("fail to load env");
+
     let mut opt =
         ConnectOptions::new(std::env::var("DATABASE_URL").expect("missing DATABASE_URL env"));
 
     opt.sqlx_logging(false);
 
-    let ws_url = std::env::var("WS_URL").expect("missing WS_URL env");
+    let ws_url = match network {
+        Network::Solana => std::env::var("SOLANA_WS_URL").expect("missing SOLANA_WS_URL env"),
+        Network::Sonic => std::env::var("SONIC_WS_URL").expect("missing SONIC_WS_URL env"),
+    };
 
     let db = Database::connect(opt)
         .await
@@ -40,7 +43,7 @@ async fn main() {
     tracing_subscriber::fmt().init();
 
     loop {
-        match stream(&db, &ws_url).await {
+        match process(&db, network, &ws_url).await {
             Ok(unsubscribe_fn) => {
                 tracing::info!("unsubscribe");
                 unsubscribe_fn().await;
@@ -51,9 +54,14 @@ async fn main() {
         }
     }
 }
+
 type UnsubscribeFn = Box<dyn FnOnce() -> BoxFuture<'static, ()> + Send>;
 
-async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<UnsubscribeFn, PubsubClientError> {
+async fn process(
+    db: &DatabaseConnection,
+    network: Network,
+    ws_url: &str,
+) -> Result<UnsubscribeFn, PubsubClientError> {
     let client = PubsubClient::new(ws_url).await?;
 
     let filter = RpcTransactionLogsFilter::Mentions(vec![PROGRAM_ID_STR.to_string()]);
@@ -79,7 +87,7 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<UnsubscribeFn, 
         }
 
         // sometime the websocket sends logs duplicate, skip if resolved
-        let snapshot = signature_snapshot::find_by_signature(db, &signature)
+        let snapshot = signature_snapshot::find_by_signature(db, network, signature.clone())
             .await
             .unwrap_or_else(|e| {
                 tracing::error!("find snapshot failed {:#?}", e);
@@ -93,18 +101,19 @@ async fn stream(db: &DatabaseConnection, ws_url: &str) -> Result<UnsubscribeFn, 
                 let db_event = native_enums::Event::from_ref(&event);
 
                 let result = match event {
-                    Event::DeployEvent(event) => _on_deploy_event(db, event).await,
-                    Event::VoteEvent(event) => _on_vote_event(db, event).await,
-                    Event::FinishEvent(event) => _on_finish_event(db, event).await,
-                    Event::CloseEvent(event) => _on_close_event(db, event).await,
-                    Event::ClaimRewards(event) => _on_claim_rewards(db, event).await,
-                    Event::Withdraw(event) => _on_withdraw(db, event).await,
+                    Event::DeployEvent(event) => _on_deploy_event(db, network, event).await,
+                    Event::VoteEvent(event) => _on_vote_event(db, network, event).await,
+                    Event::FinishEvent(event) => _on_finish_event(db, network, event).await,
+                    Event::CloseEvent(event) => _on_close_event(db, network, event).await,
+                    Event::ClaimRewards(event) => _on_claim_rewards(db, network, event).await,
+                    Event::Withdraw(event) => _on_withdraw(db, network, event).await,
                 };
 
                 match result {
                     Ok(_) => {
                         signature_snapshot::create(
                             db,
+                            network,
                             signature.clone(),
                             db_event.clone(),
                             Context::Stream,

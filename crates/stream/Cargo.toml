@@ -3,6 +3,14 @@ name = "stream"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "solana-stream"
+path = "./src/bin/sonic_stream.rs"
+
+[[bin]]
+name = "sonic-stream"
+path = "./src/bin/solana_stream.rs"
+
 [dependencies]
 program = { path = "../program" }
 database = { path = "../database" }

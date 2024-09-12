@@ -3,6 +3,15 @@ name = "scanner"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "sonic-scanner"
+path = "./src/bin/sonic_scanner.rs"
+
+[[bin]]
+name = "solana-scanner"
+path = "./src/bin/solana_scanner.rs"
+
+
 [dependencies]
 tokio = { version = "1.39.3", features = ["rt-multi-thread"] }
 thiserror = "1.0.63"

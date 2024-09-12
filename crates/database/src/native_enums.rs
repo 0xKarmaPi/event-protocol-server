@@ -53,6 +53,17 @@ pub enum Rst {
     Won,
 }
 
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, ToSchema,
+)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "network")]
+pub enum Network {
+    #[sea_orm(string_value = "solana")]
+    Solana,
+    #[sea_orm(string_value = "sonic")]
+    Sonic,
+}
+
 impl From<events::Side> for Side {
     fn from(side: events::Side) -> Self {
         match side {

@@ -8,8 +8,8 @@ model user {
 }
 
 model prediction_event {
-  id                  String   @id @db.VarChar(44)
-  pubkey              String   @unique @db.VarChar(44)
+  id                  String   @db.VarChar(44)
+  pubkey              String   @db.VarChar(44)
   creator             String   @db.VarChar(44)
   title               String   @db.VarChar(50)
   description         String   @db.VarChar(144)
@@ -23,11 +23,15 @@ model prediction_event {
   end_date            DateTime @db.Timestamptz(3)
   burning             Boolean
   result              side?
+  network             network
   created_date        DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([id, network])
+  @@unique([pubkey, network])
 }
 
 model ticket {
-  pubkey       String   @id @db.VarChar(44)
+  pubkey       String   @db.VarChar(44)
   event_pubkey String   @db.VarChar(44)
   creator      String   @db.VarChar(44)
   selection    side
@@ -35,14 +39,20 @@ model ticket {
   claimed      Boolean
   withdrawn    Boolean
   result       rst      @default(pending)
+  network      network
   created_date DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([pubkey, network])
 }
 
 model signature_snapshot {
-  signature    String   @id @db.VarChar(88)
+  signature    String   @db.VarChar(88)
   event        event
   context      context
+  network      network
   created_date DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([signature, network])
 }
 
 model setting {
@@ -73,4 +83,9 @@ enum rst {
   pending
   won
   lost
+}
+
+enum network {
+  solana
+  sonic
 }

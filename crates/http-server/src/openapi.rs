@@ -47,6 +47,7 @@ use chrono::{SecondsFormat, Utc};
         // enums
         Side,
         Rst,
+        Network
 
       ),
       responses()

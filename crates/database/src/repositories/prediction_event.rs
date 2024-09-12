@@ -12,10 +12,14 @@ use sea_orm::{
 use crate::{
     entities::{prediction_event, ticket},
     models::{Count, Ticket},
-    native_enums::{Rst, Side},
+    native_enums::{Network, Rst, Side},
 };
 
-pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<(), DbErr> {
+pub async fn create(
+    db: &DatabaseConnection,
+    network: Network,
+    event: DeployEvtEvent,
+) -> Result<(), DbErr> {
     let start_date = DateTimeUtc::from_timestamp(event.start_date as i64, 0)
         .ok_or(DbErr::Custom("invalid date start_date".to_string()))?;
 
@@ -39,6 +43,7 @@ pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<()
         created_date: Default::default(),
         left_mint_decimals: Set(event.left_mint_decimals.map(i32::from)),
         right_mint_decimals: Set(event.right_mint_decimals.map(i32::from)),
+        network: Set(network),
     };
 
     prediction_event::Entity::insert(model).exec(db).await?;
@@ -46,7 +51,11 @@ pub async fn create(db: &DatabaseConnection, event: DeployEvtEvent) -> Result<()
     Ok(())
 }
 
-pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Result<(), DbErr> {
+pub async fn set_result(
+    db: &DatabaseConnection,
+    network: Network,
+    event: FinishEvtEvent,
+) -> Result<(), DbErr> {
     let result: Side = event.result.into();
 
     let tx = db.begin().await?;
@@ -55,6 +64,7 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
     prediction_event::Entity::update_many()
         .col_expr(prediction_event::Column::Result, result.as_enum())
         .filter(prediction_event::Column::Pubkey.eq(&event_key))
+        .filter(prediction_event::Column::Network.eq(network))
         .exec(&tx)
         .await?;
 
@@ -62,6 +72,7 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
         .col_expr(ticket::Column::Result, Expr::value(Rst::Won.as_enum()))
         .filter(ticket::Column::EventPubkey.eq(&event_key))
         .filter(ticket::Column::Selection.eq(result.clone()))
+        .filter(prediction_event::Column::Network.eq(network))
         .exec(&tx)
         .await?;
 
@@ -69,6 +80,7 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
         .col_expr(ticket::Column::Result, Expr::value(Rst::Lost.as_enum()))
         .filter(ticket::Column::EventPubkey.eq(&event_key))
         .filter(ticket::Column::Selection.ne(result))
+        .filter(prediction_event::Column::Network.eq(network))
         .exec(&tx)
         .await?;
 
@@ -77,9 +89,10 @@ pub async fn set_result(db: &DatabaseConnection, event: FinishEvtEvent) -> Resul
     Ok(())
 }
 
-pub async fn delete(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> {
+pub async fn delete(db: &DatabaseConnection, network: Network, pubkey: &str) -> Result<(), DbErr> {
     prediction_event::Entity::delete_many()
         .filter(prediction_event::Column::Pubkey.eq(pubkey))
+        .filter(prediction_event::Column::Network.eq(network))
         .exec(db)
         .await?;
 
@@ -88,11 +101,12 @@ pub async fn delete(db: &DatabaseConnection, pubkey: &str) -> Result<(), DbErr> 
 
 pub async fn create_from_account(
     db: &DatabaseConnection,
+    network: Network,
     event: DeployEvtEvent,
     account: PredictionEvent,
     block_time: i64,
 ) -> Result<(), DbErr> {
-    let record = prediction_event::Entity::find_by_id(account.id.to_string())
+    let record = prediction_event::Entity::find_by_id((account.id.to_string(), network))
         .one(db)
         .await?;
 
@@ -125,6 +139,8 @@ pub async fn create_from_account(
             created_date: Set(created_date.into()),
             left_mint_decimals: Set(event.left_mint_decimals.map(i32::from)),
             right_mint_decimals: Set(event.right_mint_decimals.map(i32::from)),
+
+            network: Set(network),
         };
 
         prediction_event::Entity::insert(model).exec(db).await?;
@@ -191,9 +207,12 @@ pub async fn find(
 
 pub async fn find_by_id(
     db: &DatabaseConnection,
-    id: &str,
+    network: Network,
+    id: String,
 ) -> Result<Option<prediction_event::Model>, DbErr> {
-    prediction_event::Entity::find_by_id(id).one(db).await
+    prediction_event::Entity::find_by_id((id, network))
+        .one(db)
+        .await
 }
 
 pub async fn count_total_created_by_pubkey(
