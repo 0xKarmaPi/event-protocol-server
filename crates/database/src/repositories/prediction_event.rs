@@ -72,7 +72,7 @@ pub async fn set_result(
         .col_expr(ticket::Column::Result, Expr::value(Rst::Won.as_enum()))
         .filter(ticket::Column::EventPubkey.eq(&event_key))
         .filter(ticket::Column::Selection.eq(result.clone()))
-        .filter(prediction_event::Column::Network.eq(network))
+        .filter(ticket::Column::Network.eq(network))
         .exec(&tx)
         .await?;
 
@@ -80,7 +80,7 @@ pub async fn set_result(
         .col_expr(ticket::Column::Result, Expr::value(Rst::Lost.as_enum()))
         .filter(ticket::Column::EventPubkey.eq(&event_key))
         .filter(ticket::Column::Selection.ne(result))
-        .filter(prediction_event::Column::Network.eq(network))
+        .filter(ticket::Column::Network.eq(network))
         .exec(&tx)
         .await?;
 
