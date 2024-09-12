@@ -57,6 +57,8 @@ pub enum Rst {
     Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize, ToSchema,
 )]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "network")]
+#[serde(rename_all(deserialize = "lowercase"))]
+#[schema(rename_all = "lowercase")]
 pub enum Network {
     #[sea_orm(string_value = "solana")]
     Solana,
