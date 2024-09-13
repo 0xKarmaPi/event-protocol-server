@@ -42,6 +42,8 @@ pub async fn scan(network: Network) {
         ),
     };
 
+    tracing::info!("network: {}, rpc: {}", network, rpc_url);
+
     let client = RpcClient::new(rpc_url);
 
     let program_id = Pubkey::from_str(PROGRAM_ID_STR).expect("invalid program id");

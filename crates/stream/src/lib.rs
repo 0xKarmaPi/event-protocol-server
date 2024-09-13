@@ -38,6 +38,8 @@ pub async fn stream(network: Network) {
         Network::Sonic => std::env::var("SONIC_WS_URL").expect("missing SONIC_WS_URL env"),
     };
 
+    tracing::info!("network: {}, rpc: {}", network, ws_url);
+
     let db = Database::connect(opt)
         .await
         .expect("fail to connect to datbase");
