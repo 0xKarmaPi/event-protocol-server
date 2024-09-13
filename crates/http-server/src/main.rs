@@ -21,7 +21,7 @@ async fn main() {
     dotenv().expect("fail to load env");
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().with_target(false))
         .init();
 
     let db_url = std::env::var("DATABASE_URL").expect("missing DATABASE_URL");

@@ -26,6 +26,8 @@ use solana_sdk::commitment_config::CommitmentConfig;
 pub async fn stream(network: Network) {
     dotenv().expect("fail to load env");
 
+    tracing_subscriber::fmt().with_target(false).init();
+
     let mut opt =
         ConnectOptions::new(std::env::var("DATABASE_URL").expect("missing DATABASE_URL env"));
 
@@ -39,8 +41,6 @@ pub async fn stream(network: Network) {
     let db = Database::connect(opt)
         .await
         .expect("fail to connect to datbase");
-
-    tracing_subscriber::fmt().init();
 
     loop {
         match process(&db, network, &ws_url).await {

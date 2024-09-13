@@ -29,6 +29,8 @@ use std::{str::FromStr, time::Duration};
 pub async fn scan(network: Network) {
     dotenv().expect("fail to load env");
 
+    tracing_subscriber::fmt().with_target(false).init();
+
     let (rpc_url, key) = match network {
         Network::Solana => (
             std::env::var("SOLANA_RPC_URL").expect("missing SOLANA_RPC_URL env"),
@@ -52,8 +54,6 @@ pub async fn scan(network: Network) {
     let db = Database::connect(opt)
         .await
         .expect("fail to connect to datbase");
-
-    tracing_subscriber::fmt().init();
 
     let mut lastest_signature = setting::get(&db, key)
         .await
