@@ -63,15 +63,9 @@ pub async fn scan(network: Network) {
         .expect("lastest_scanned_signature setting not found");
 
     loop {
-        process(
-            &db,
-            Network::Solana,
-            &client,
-            &program_id,
-            &mut lastest_signature,
-        )
-        .await
-        .unwrap_or_else(|error| tracing::error!("{}", error));
+        process(&db, network, &client, &program_id, &mut lastest_signature)
+            .await
+            .unwrap_or_else(|error| tracing::error!("{}", error));
 
         setting::set(&db, key, lastest_signature.clone())
             .await
